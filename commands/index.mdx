@@ -1,0 +1,38 @@
+---
+title: "ft index"
+description: "Rebuild the SQLite search index from the JSONL bookmark cache"
+---
+
+Build or update the SQLite FTS5 search index from the raw bookmark cache (`~/.ft-bookmarks/bookmarks.jsonl`). Under normal use this runs automatically after `ft sync`, but you can run it manually to merge in new bookmarks without syncing, or to rebuild from scratch.
+
+## Usage
+
+```bash
+ft index [options]
+```
+
+## Options
+
+<ParamField query="--force" type="boolean">
+  Drop all existing index tables and rebuild from scratch. This re-reads every bookmark from the JSONL cache and re-indexes them.
+
+  **Warning:** This erases all stored classifications (categories and domains). You will need to re-run `ft classify` afterward.
+</ParamField>
+
+## Examples
+
+```bash
+# Incrementally add any new bookmarks from the cache to the index
+ft index
+
+# Drop and rebuild the entire index from scratch
+ft index --force
+```
+
+## Notes
+
+- The search index lives at `~/.ft-bookmarks/bookmarks.db` (SQLite with FTS5).
+- The raw bookmark cache at `~/.ft-bookmarks/bookmarks.jsonl` is the source of truth. The index is derived from it and can always be rebuilt.
+- Without `--force`, `ft index` is additive: it only inserts bookmarks whose IDs are not already in the index, preserving all existing classifications.
+- With `--force`, all stored category and domain classifications are lost. Only use this if the index is corrupted or you want a fully clean rebuild.
+- `ft sync` automatically calls `ft index` (without `--force`) after adding new bookmarks.

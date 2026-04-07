@@ -1,0 +1,99 @@
+---
+title: "Visual dashboard"
+description: "Get a bird's-eye view of your bookmark collection with ft viz, an ANSI terminal dashboard."
+keywords: ["viz", "dashboard", "terminal", "sparkline", "visualization", "activity", "categories"]
+---
+
+`ft viz` renders a full ANSI terminal dashboard that gives you a visual overview of your entire bookmark collection — patterns, habits, top voices, and content composition — all in one place.
+
+## Running the dashboard
+
+```bash
+ft viz
+```
+
+The dashboard renders immediately from your local SQLite index. No network requests are made.
+
+<Note>
+`ft viz` requires a built search index. Run `ft index` first if you haven't already.
+</Note>
+
+## What the dashboard shows
+
+The dashboard is composed of several sections, rendered in sequence:
+
+### Hidden gems
+
+Authors you've bookmarked exactly once who wrote long, substantive posts. Easy to forget; surfaced here so they're not lost.
+
+### Time capsules
+
+Your oldest bookmarked posts, one per year. Shows what you were saving years ago and what still held up.
+
+### Who you listen to
+
+A ranked bar chart of your 20 most-bookmarked authors, with bar length proportional to bookmark count. Gradient-colored from blue (lower counts) to coral (highest count).
+
+### Categories
+
+A bar chart of your bookmark categories (e.g., `research`, `tool`, `technique`). Only appears after you've run `ft classify`.
+
+### Domains
+
+A bar chart of subject domains (e.g., `ai`, `devtools`, `finance`). Only appears after domain classification.
+
+### Rhythm
+
+A sparkline of monthly bookmarking activity followed by per-month bar charts. Shows how your bookmarking cadence has changed over time.
+
+### Weekly pulse
+
+A braille dot chart and bar chart showing which days of the week you bookmark most.
+
+### Daily arc
+
+A 24-column vertical bar chart showing the hour of day when you reach for the bookmark button. Annotates your peak hour and quietest hour.
+
+### Where links lead
+
+The top 12 external domains found in your bookmarked tweets — sites your saved content links to most often (excludes `x.com` and `t.co`).
+
+### Composition
+
+A stacked bar showing the proportion of bookmarks that contain media, external links, or are text-only.
+
+### Rising
+
+Authors whose bookmarks all come from your most recent month — new voices in your collection.
+
+### Fingerprint
+
+A summary box with key stats: average bookmark text length, percentage with media, long-tail author proportion, and your top voice. Also shows which authors appeared in your most recent sync session.
+
+## Text-based alternatives
+
+If you prefer plain text output, two commands give you the same category and domain data as tables:
+
+```bash
+# Category distribution with percentages
+ft categories
+
+# Subject domain distribution with percentages
+ft domains
+```
+
+Example output:
+
+```
+  research          312  (28.4%)
+  tool              218  (19.8%)
+  technique         187  (17.0%)
+  opinion           143  (13.0%)
+  launch             98   (8.9%)
+  security           72   (6.6%)
+  commerce           68   (6.2%)
+```
+
+<Tip>
+`ft viz` is designed for a terminal with true-color (24-bit) support and a monospace font. If colors look off, check that your terminal emulator supports RGB color — most modern terminals (iTerm2, Warp, Kitty, Windows Terminal) do.
+</Tip>

@@ -1,22 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Field Theory CLI",
+  "projectType": "cli-tool",
+  "projectName": "Field Theory CLI",
+  "projectDescription": "A free, open-source CLI for Mac that syncs all your X/Twitter bookmarks locally, enabling full-text search, LLM-powered classification, and AI agent integration.",
   "theme": "luma",
-  "colors": {
-    "primary": "#040404"
-  },
-  "favicon": "https://media.brand.dev/0588d068-7670-4fab-b5a2-dd23715458aa.png",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/afar1/fieldtheory-cli"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/afar1/fieldtheory-cli"
-    }
-  },
+  "primaryColor": "#040404",
+  "lightColor": null,
+  "darkColor": null,
   "navigation": {
     "tabs": [
       {
@@ -93,5 +82,39 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Chrome session-based sync — no API key required (macOS)",
+    "OAuth v2 API sync for cross-platform use",
+    "SQLite FTS5 full-text search with BM25 ranking",
+    "LLM-powered bookmark classification by category and subject domain",
+    "Regex-based fast classification (no LLM cost)",
+    "ANSI terminal dashboard with sparklines and category breakdowns",
+    "AI agent integration — works with Claude Code, Codex, and any shell-capable agent",
+    "Local-first: all data stored in ~/.ft-bookmarks/, no telemetry",
+    "Cron-friendly for automated daily syncing",
+    "Media asset download support"
+  ],
+  "publicApiSurface": [
+    "ft sync",
+    "ft sync --api",
+    "ft sync --full",
+    "ft sync --classify",
+    "ft search <query>",
+    "ft list",
+    "ft show <id>",
+    "ft classify",
+    "ft classify --regex",
+    "ft classify-domains",
+    "ft categories",
+    "ft domains",
+    "ft viz",
+    "ft stats",
+    "ft index",
+    "ft auth",
+    "ft status",
+    "ft path",
+    "ft sample <category>",
+    "ft fetch-media"
+  ]
 }

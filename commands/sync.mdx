@@ -1,0 +1,84 @@
+---
+title: "ft sync"
+description: "Sync bookmarks from X into your local database"
+---
+
+Download your X/Twitter bookmarks into a local database at `~/.ft-bookmarks/`. By default, `ft sync` uses your active Chrome session to authenticate — no API keys or passwords required. It performs an incremental sync, stopping as soon as it reaches bookmarks you've already stored.
+
+## Usage
+
+```bash
+ft sync [options]
+```
+
+## Options
+
+<ParamField query="--api" type="boolean" default="false">
+  Use the OAuth v2 API instead of the Chrome session. Requires running `ft auth` first to store an OAuth token. This mode works cross-platform (macOS, Linux, Windows).
+</ParamField>
+
+<ParamField query="--full" type="boolean" default="false">
+  Perform a full crawl instead of an incremental sync. Fetches all bookmarks from the beginning of your history rather than stopping at the most recently stored one.
+</ParamField>
+
+<ParamField query="--classify" type="boolean" default="false">
+  Automatically classify newly synced bookmarks with an LLM after the sync completes. Runs both category and domain classification. Requires `claude` or `codex` CLI to be available.
+</ParamField>
+
+<ParamField query="--max-pages" type="number" default="500">
+  Maximum number of pages to fetch in a single run. Each page returns a batch of bookmarks. Increase this for a very large initial sync.
+</ParamField>
+
+<ParamField query="--target-adds" type="number">
+  Stop syncing after this many new bookmarks have been added. Useful for limiting the size of an initial sync or for testing.
+</ParamField>
+
+<ParamField query="--delay-ms" type="number" default="600">
+  Delay in milliseconds between page requests. Increasing this reduces the chance of rate limiting at the cost of longer sync times.
+</ParamField>
+
+<ParamField query="--max-minutes" type="number" default="30">
+  Maximum runtime in minutes. If the sync hasn't finished by this time, it pauses and prints a message. Run `ft sync` again to continue.
+</ParamField>
+
+<ParamField query="--chrome-user-data-dir" type="string">
+  Path to your Chrome user data directory. Useful when Chrome is installed in a non-standard location or when using a Chromium-based browser.
+</ParamField>
+
+<ParamField query="--chrome-profile-directory" type="string">
+  Name of the Chrome profile to use (e.g., `"Profile 1"`, `"Default"`). Required when you have multiple Chrome profiles and the one logged into X is not the default.
+</ParamField>
+
+## Examples
+
+```bash
+# First-time sync — Chrome must be open and logged into x.com
+ft sync
+
+# Full history crawl (not just new bookmarks)
+ft sync --full
+
+# Sync then automatically classify new bookmarks
+ft sync --classify
+
+# Use OAuth API instead of Chrome session
+ft sync --api
+
+# Use a specific Chrome profile
+ft sync --chrome-profile-directory "Profile 2"
+
+# Fetch up to 1000 pages with a longer delay to avoid rate limits
+ft sync --max-pages 1000 --delay-ms 1200
+
+# Quick test — stop after 50 new bookmarks
+ft sync --target-adds 50
+```
+
+## Notes
+
+- **Chrome session sync** (the default) reads session cookies from Chrome's local SQLite database on macOS. Chrome must be fully quit before running `ft sync`, or the cookie database may be locked.
+- **Keychain access**: On macOS, the first run prompts for Keychain access to decrypt Chrome's cookie encryption key. Denying this will prevent sync.
+- **Multiple profiles**: If you have multiple Chrome profiles and see no bookmarks, use `--chrome-profile-directory` to specify the correct one.
+- **Cross-platform**: Chrome session sync is macOS-only. On Linux and Windows, use `ft auth` + `ft sync --api`.
+- The sync automatically builds (or updates) the search index after adding new bookmarks.
+- Data is stored at `~/.ft-bookmarks/`. Override with the `FT_DATA_DIR` environment variable.

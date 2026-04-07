@@ -1,0 +1,243 @@
+---
+title: "Regex classification"
+description: "Classify your entire bookmark corpus in under a second using pattern matching — no LLM required."
+keywords: ["regex", "classify", "patterns", "fast", "offline", "classification", "categories"]
+---
+
+`ft classify --regex` runs a rule-based classifier over your entire bookmark corpus in under one second. It requires no LLM, no API key, and no network connection.
+
+## Running regex classification
+
+```bash
+ft classify --regex
+```
+
+Output:
+
+```
+Classifying bookmarks (regex)...
+Indexed 4751 bookmarks → ~/.ft-bookmarks/bookmarks.db
+
+Classified 3892/4751 bookmarks (859 unclassified)
+
+  tool            1823  (38.4%)
+  technique        941  (19.8%)
+  research         612  (12.9%)
+  opinion          488  (10.3%)
+  launch           321   (6.8%)
+  security         198   (4.2%)
+  commerce          87   (1.8%)
+```
+
+The command rebuilds the SQLite index and stores the classification results in the `categories` and `primary_category` columns of the `bookmarks` table.
+
+---
+
+## How it works
+
+The classifier inspects three sources of signal for each bookmark:
+
+1. **Tweet text** — the full text of the tweet is matched against pattern sets for each category.
+2. **Extracted links** — URLs found in the tweet text (excluding `t.co` shortlinks) are parsed for their domain.
+3. **Metadata links** — any links stored alongside the bookmark record in the JSONL cache.
+
+Domain-based matching runs in parallel with text pattern matching. For example, a bookmark linking to `arxiv.org` is classified as `research` even if the tweet text contains no research-related keywords.
+
+### Priority order
+
+When a bookmark matches multiple categories, the first match in the following priority list becomes the **primary** category:
+
+`security` → `tool` → `technique` → `launch` → `research` → `opinion` → `commerce`
+
+All matched categories are stored (a bookmark can belong to more than one). Only the primary differs.
+
+---
+
+## Pattern sets
+
+Each category is defined by a set of regular expressions tested against the tweet text.
+
+<AccordionGroup>
+  <Accordion title="TOOL_PATTERNS">
+    Matches GitHub repository URLs, package manager install commands, and open-source terminology.
+
+    ```
+    github.com/<user>/<repo>
+    npm install / npm i
+    pip install
+    cargo add
+    brew install
+    open source / open-source / open sourced
+    cli ... tool / tool ... cli
+    rust crate
+    vscode extension
+    npx <command>
+    repo ... github / github ... repo
+    self-hosted / self hosted
+    ```
+
+    Also triggers on links to: `github.com`, `gitlab.com`, `huggingface.co`, `npmjs.com`, `pypi.org`, `crates.io`, `pkg.go.dev`.
+  </Accordion>
+
+  <Accordion title="SECURITY_PATTERNS">
+    Matches vulnerability disclosures, exploits, and security incidents.
+
+    ```
+    CVE-<year> / CVE <year>
+    vulnerabilit(y/ies)
+    exploit
+    malware
+    ransomware
+    supply chain attack
+    security (flaw|bug|issue|patch|advisory|update|breach)
+    breach
+    backdoor
+    zero-day / zero day
+    remote code execution
+    RCE
+    privilege escalation
+    compromised
+    ```
+  </Accordion>
+
+  <Accordion title="TECHNIQUE_PATTERNS">
+    Matches tutorials, walkthroughs, and implementation posts.
+
+    ```
+    how I / how we / how to
+    tutorial
+    walkthrough
+    step-by-step / step by step
+    built with / built using / built this / built a / built my
+    here's how / here is how
+    code (pattern|example|snippet|sample)
+    architecture of / architecture for / architecture behind
+    implemented from scratch
+    under the hood
+    deep-dive / deep dive
+    technique
+    pattern for / pattern in / pattern to
+    ```
+  </Accordion>
+
+  <Accordion title="LAUNCH_PATTERNS">
+    Matches product launches and release announcements.
+
+    ```
+    just (launched|shipped|released|dropped|published)
+    we're launching / we are launching / we are shipping
+    announcing
+    introducing / introduces
+    now available / now live / now in beta
+    v<major>.<minor>   (e.g. v1.0, v2.3)
+    (alpha|beta) (release|launch|is here)
+    product hunt
+    🚀 ... (launch|ship|live)
+    check it out
+    ```
+  </Accordion>
+
+  <Accordion title="RESEARCH_PATTERNS">
+    Matches academic papers and scientific findings.
+
+    ```
+    arxiv.org
+    paper ... (new|our|this|the)
+    (new|our|this) ... paper
+    study (finds|shows|reveals)
+    finding(s)
+    peer-review / peer review
+    preprint
+    research (from|by|at|shows)
+    published in
+    journal
+    state-of-the-art / state of the art
+    ```
+
+    Also triggers on links to: `arxiv.org`, `scholar.google.com`, `semanticscholar.org`, `biorxiv.org`, `medrxiv.org`, `nature.com`, `science.org`.
+  </Accordion>
+
+  <Accordion title="OPINION_PATTERNS">
+    Matches commentary, hot takes, and analysis threads.
+
+    ```
+    thread 👇
+    unpopular opinion
+    hot take
+    here's why / here's what / here's my take
+    I think ... (about|that)
+    controversial
+    overrated
+    underrated
+    lessons (learned|from)
+    mistakes I / mistakes we
+    ```
+  </Accordion>
+
+  <Accordion title="COMMERCE_PATTERNS">
+    Matches shopping links and affiliate content.
+
+    ```
+    amazon.com
+    shop (here|now)
+    buy (now|here|this)
+    discount
+    coupon
+    affiliate
+    geni.us
+    a.co/
+    $<amount> (off|USD|discount)
+    ```
+
+    Also triggers on links to: `amazon.com`, `a.co`, `store.steampowered.com`, `geni.us`, `ebay.com`.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Speed
+
+The regex classifier processes your entire bookmark corpus in under one second regardless of size. It runs synchronously in the same Node.js process with no batching, no network calls, and no external dependencies.
+
+This makes it suitable as a first pass immediately after `ft sync`, or for re-running whenever you want to update classifications without waiting for an LLM.
+
+---
+
+## When to use regex classification
+
+<CardGroup cols={2}>
+  <Card title="No LLM available" icon="wifi-off">
+    You don't have Claude or Codex installed, or you're running in an environment without network access.
+  </Card>
+  <Card title="Instant results" icon="zap">
+    You want to see category distribution right after a sync without waiting for LLM batches.
+  </Card>
+  <Card title="First pass before LLM" icon="filter">
+    Run regex first to classify the easy cases. Then run `ft classify` to handle the remaining unclassified bookmarks with higher accuracy.
+  </Card>
+  <Card title="Free tier" icon="tag">
+    No subscription cost. Regex classification is always free.
+  </Card>
+</CardGroup>
+
+<Note>
+  Regex classification does not assign **subject domains** (`ai`, `finance`, etc.). For domain assignment, use `ft classify` or `ft classify-domains`.
+</Note>
+
+---
+
+## Rebuilding the index
+
+`ft classify --regex` always rebuilds the SQLite index from the JSONL cache before writing classification results. This is equivalent to running `ft index` followed by classification.
+
+If you want to rebuild the index without classification:
+
+```bash
+ft index
+```
+
+If you want to drop the index entirely and start fresh (this loses all existing classifications):
+
+```bash
+ft index --force
+```

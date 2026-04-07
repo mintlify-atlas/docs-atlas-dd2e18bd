@@ -1,0 +1,113 @@
+---
+title: "Data directory"
+description: "Where Field Theory CLI stores your bookmarks and how to manage that data."
+keywords: ["data directory", "file storage", "bookmarks.jsonl", "bookmarks.db", "ft path", "ft status"]
+---
+
+All data is stored locally on your machine — no cloud sync, no external database.
+
+## Default location
+
+Field Theory CLI stores everything in `~/.ft-bookmarks/` by default.
+
+```bash
+~/.ft-bookmarks/
+  bookmarks.jsonl           # raw bookmark cache (one JSON object per line)
+  bookmarks.db              # SQLite FTS5 search index
+  bookmarks-meta.json       # sync metadata (last sync time, total count)
+  oauth-token.json          # OAuth token (only present if using --api mode)
+  bookmarks-backfill-state.json  # backfill progress state
+  media/                    # downloaded media assets (if ft fetch-media was run)
+  media-manifest.json       # index of downloaded media files
+```
+
+## File inventory
+
+<AccordionGroup>
+  <Accordion title="bookmarks.jsonl — raw bookmark cache">
+    The primary data file. Each line is a complete JSON object representing one bookmark as returned by X's API. This file is the source of truth — the SQLite index is built from it.
+
+    Because it's plain JSONL, you can process it with any tool:
+
+    ```bash
+    # Count your bookmarks
+    wc -l ~/.ft-bookmarks/bookmarks.jsonl
+
+    # Pretty-print the first bookmark
+    head -1 ~/.ft-bookmarks/bookmarks.jsonl | python3 -m json.tool
+    ```
+  </Accordion>
+
+  <Accordion title="bookmarks.db — SQLite FTS5 search index">
+    A SQLite database with a full-text search index built using the FTS5 extension. All `ft search`, `ft list`, `ft stats`, and `ft viz` commands read from this file.
+
+    You can query it directly with any SQLite client:
+
+    ```bash
+    sqlite3 ~/.ft-bookmarks/bookmarks.db ".tables"
+    ```
+
+    <Note>The index can be rebuilt at any time by running `ft index`. It does not store any data that isn't already in `bookmarks.jsonl`.</Note>
+  </Accordion>
+
+  <Accordion title="bookmarks-meta.json — sync metadata">
+    Tracks sync state: the timestamp of the last successful sync and the total bookmark count. Used by `ft status` and by incremental sync to avoid re-downloading bookmarks you already have.
+  </Accordion>
+
+  <Accordion title="oauth-token.json — OAuth token">
+    Only created if you run `ft auth` to set up OAuth API access. Stores your OAuth 2.0 token for use with `ft sync --api`.
+
+    <Warning>This file is written with `chmod 600` (owner read/write only). Treat it like a password — do not commit it to version control or share it.</Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Overriding the location
+
+Set the `FT_DATA_DIR` environment variable to use a different directory:
+
+```bash
+export FT_DATA_DIR=/Volumes/External/ft-bookmarks
+ft sync
+```
+
+You can set this permanently in a `.env` or `.env.local` file in your current working directory or inside the data directory itself. See [Environment variables](/configuration/environment-vars) for details.
+
+## Useful commands
+
+### Find the data path
+
+```bash
+ft path
+```
+
+Prints the absolute path to the data directory. Useful for scripting or confirming which directory is active when `FT_DATA_DIR` is set.
+
+### Check sync status
+
+```bash
+ft status
+```
+
+Shows the data directory location, last sync time, and total bookmark count.
+
+## Backup
+
+To back up your bookmarks, copy the entire directory:
+
+```bash
+cp -r ~/.ft-bookmarks ~/backups/ft-bookmarks-$(date +%Y%m%d)
+```
+
+Because all data is plain files (JSONL, SQLite, JSON), backups are portable across machines.
+
+<Tip>For incremental backups, `bookmarks.jsonl` and `bookmarks.db` are the only files you need to restore full functionality. The other files are regenerated automatically.</Tip>
+
+## Removing all data
+
+```bash
+rm -rf ~/.ft-bookmarks
+```
+
+This removes all bookmarks, the search index, sync metadata, and OAuth tokens. The next `ft sync` will start fresh.
+
+<Warning>This is irreversible. Your bookmarks still exist on X — you can re-sync them — but any LLM classifications you applied will be lost.</Warning>

@@ -1,0 +1,126 @@
+---
+title: "Full-text search"
+description: "Search across your bookmarks using ft search with SQLite FTS5 and BM25 ranking."
+keywords: ["search", "full-text search", "fts5", "ft search", "query"]
+---
+
+`ft search` runs full-text search across all your synced bookmarks. Results are ranked by relevance using BM25 scoring.
+
+## Prerequisites
+
+Before searching, you need a search index. If you haven't built one yet, run:
+
+```bash
+ft index
+```
+
+The index is built automatically when you run `ft sync`. Run `ft index` again any time you want to rebuild it manually.
+
+## Basic usage
+
+```bash
+ft search "machine learning"
+```
+
+This returns up to 20 results ranked by relevance, showing the author, post date, a text excerpt, and the URL.
+
+```
+1. [2024-11-14] @karpathy
+   The scaling hypothesis has been the most important idea in ML for the last 5 years...
+   https://x.com/karpathy/status/1857341234567890
+
+2. [2024-09-02] @ylecun
+   Self-supervised learning is the future of machine intelligence. Here's why...
+   https://x.com/ylecun/status/1830912345678901
+```
+
+## FTS5 query syntax
+
+The query argument supports SQLite FTS5 syntax, giving you precise control over what to match.
+
+| Syntax | Example | Matches |
+|--------|---------|---------|
+| Implicit AND | `rust async` | Both "rust" and "async" |
+| `AND` | `rust AND async` | Both "rust" and "async" |
+| `OR` | `pytorch OR tensorflow` | Either term |
+| `NOT` | `python NOT django` | "python" but not "django" |
+| Exact phrase | `"neural network"` | The exact phrase |
+| Prefix | `embed*` | "embed", "embedding", "embeddings", … |
+
+<Note>
+The search index uses the Porter stemmer, so searching `embed` will also match `embedding` and `embeddings`. You don't need to add a wildcard for common word variations.
+</Note>
+
+## Available flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--author <handle>` | Filter results to a specific author | — |
+| `--after <date>` | Only include posts after this date (`YYYY-MM-DD`) | — |
+| `--before <date>` | Only include posts before this date (`YYYY-MM-DD`) | — |
+| `--limit <n>` | Maximum number of results to return | `20` |
+
+## Examples
+
+### Search by topic
+
+```bash
+ft search "transformer architecture"
+ft search "rust async await"
+ft search "llm fine-tuning OR RLHF"
+```
+
+### Filter by author
+
+```bash
+ft search "attention mechanism" --author karpathy
+```
+
+Only returns bookmarks from `@karpathy` that match the query.
+
+### Filter by date range
+
+```bash
+# Posts from 2024 only
+ft search "diffusion models" --after 2024-01-01 --before 2024-12-31
+
+# Posts from the past year
+ft search "MoE" --after 2024-01-01
+```
+
+### Combine filters
+
+```bash
+ft search "systems programming" --author fasterthanlime --after 2023-06-01 --limit 5
+```
+
+### Exclude a term
+
+```bash
+ft search "python NOT django"
+```
+
+### Exact phrase
+
+```bash
+ft search '"context window"'
+```
+
+<Tip>
+Wrap exact phrases in double quotes. In your shell, use single quotes around the whole argument to avoid escaping: `ft search '"exact phrase"'`.
+</Tip>
+
+## How search works
+
+The search index is a SQLite FTS5 virtual table that indexes the full text of each bookmark along with the author handle and display name. When you run `ft search`:
+
+1. Your query is matched against the FTS5 index using SQLite's `MATCH` operator.
+2. Results are scored with BM25 (term frequency × inverse document frequency), weighted to favor matches in the tweet text over author fields.
+3. Any `--author`, `--after`, or `--before` filters are applied as SQL `WHERE` conditions after the FTS match.
+4. Results are returned in descending relevance order (most relevant first).
+
+The tokenizer is `porter unicode61`, which applies Porter stemming so that morphological variations of a word match the same index entries.
+
+<Info>
+`ft search` searches the text of the tweets you've bookmarked. It does not search tweet replies, quoted tweets, or media captions.
+</Info>

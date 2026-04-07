@@ -1,0 +1,173 @@
+---
+title: "Chrome session sync"
+description: "The default sync method for macOS. Reads your Chrome cookies to authenticate with X's internal GraphQL API — no API key required."
+---
+
+Chrome session sync is the default method used when you run `ft sync`. It reads the `ct0` and `auth_token` cookies from Chrome's local SQLite database, uses them to call X's internal GraphQL bookmarks API, and then discards them. No credentials are ever stored separately.
+
+<Note>
+  Chrome session sync is macOS-only. On Linux or Windows, use [OAuth API sync](/syncing/oauth-api) instead.
+</Note>
+
+## How it works
+
+<Steps>
+  <Step title="Cookie extraction">
+    `ft` locates Chrome's `Cookies` SQLite database on disk, decrypts the `ct0` (CSRF token) and `auth_token` cookies using the key stored in your macOS Keychain, and builds an HTTP cookie header in memory.
+  </Step>
+  <Step title="GraphQL requests">
+    Using the decrypted cookies, `ft` calls `https://x.com/i/api/graphql/.../Bookmarks` — the same internal API the x.com web app uses. Each page returns up to 20 bookmarks.
+  </Step>
+  <Step title="Local storage">
+    Bookmarks are merged into `~/.ft-bookmarks/bookmarks.jsonl` and indexed into `~/.ft-bookmarks/bookmarks.db`. The cookies are discarded immediately after the sync completes.
+  </Step>
+</Steps>
+
+## Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Quit Chrome completely" icon="circle-xmark">
+    Use **Cmd+Q**, not just closing the window. Chrome locks its `Cookies` database while running; a copy is attempted but decryption may fail if the database is actively written to.
+  </Card>
+  <Card title="Logged into x.com" icon="check">
+    Open Chrome, go to `https://x.com`, and confirm you are logged in. The `ct0` cookie only exists after authentication.
+  </Card>
+</CardGroup>
+
+## Running a sync
+
+### Incremental sync (default)
+
+Fetches only bookmarks added since your last sync. Stops as soon as it catches up to the most recently stored bookmark.
+
+```bash
+ft sync
+```
+
+### Full history crawl
+
+Crawls your entire bookmark history, up to `--max-pages` pages (500 by default, 20 bookmarks per page = up to 10,000 bookmarks). Use this on first run or to recover any gaps.
+
+```bash
+ft sync --full
+```
+
+## All sync flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--full` | off | Full history crawl instead of incremental sync |
+| `--max-pages <n>` | `500` | Maximum pages to fetch (20 bookmarks per page) |
+| `--target-adds <n>` | unlimited | Stop after N new bookmarks have been added |
+| `--delay-ms <n>` | `600` | Delay between page requests in milliseconds |
+| `--max-minutes <n>` | `30` | Maximum runtime; sync is paused and can be resumed |
+| `--chrome-user-data-dir <path>` | auto-detected | Override the Chrome user-data directory |
+| `--chrome-profile-directory <name>` | `Default` | Chrome profile name (e.g. `Profile 1`) |
+| `--classify` | off | Classify new bookmarks with LLM after syncing |
+
+### Examples
+
+```bash
+# Incremental sync (default — catches up since last run)
+ft sync
+
+# Full crawl, fetching at most 200 pages
+ft sync --full --max-pages 200
+
+# Stop after collecting 500 new bookmarks
+ft sync --target-adds 500
+
+# Use a slower request rate to avoid rate limiting
+ft sync --delay-ms 1200
+
+# Use a specific Chrome profile
+ft sync --chrome-profile-directory "Profile 1"
+
+# Sync and classify new bookmarks in one step
+ft sync --classify
+```
+
+## Data stored
+
+All data is written to `~/.ft-bookmarks/`:
+
+```
+~/.ft-bookmarks/
+  bookmarks.jsonl          # raw bookmark cache (one record per line, NDJSON)
+  bookmarks.db             # SQLite FTS5 search index
+  bookmarks-meta.json      # sync metadata (timestamps, total count)
+  bookmarks-backfill-state.json  # crawl state (stop reason, last seen IDs)
+```
+
+Override the data directory with the `FT_DATA_DIR` environment variable:
+
+```bash
+export FT_DATA_DIR=/path/to/custom/dir
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No bookmarks found (0 results)">
+    The CLI will warn you if no bookmarks are returned. Common causes:
+
+    1. **Chrome is still running** — Use **Cmd+Q** to quit fully, not just close the window.
+    2. **Keychain access denied** — Open **System Settings → Privacy & Security** and check that the terminal application (Terminal, iTerm2, etc.) is allowed to access Keychain items.
+    3. **Wrong Chrome profile** — If your X login is in a non-default profile, specify it:
+
+    ```bash
+    ft sync --chrome-profile-directory "Profile 1"
+    ```
+  </Accordion>
+
+  <Accordion title="Multiple Chrome profiles">
+    Chrome profiles are stored as subdirectories inside the user-data directory (e.g. `Default`, `Profile 1`, `Profile 2`). To find the profile name:
+
+    1. Open Chrome and go to `chrome://version`.
+    2. Look at the **Profile Path** field — the last path segment is the profile directory name.
+
+    Then pass it to `ft sync`:
+
+    ```bash
+    ft sync --chrome-profile-directory "Profile 2"
+    ```
+
+    You can also set it permanently via environment variable:
+
+    ```bash
+    export FT_CHROME_PROFILE_DIRECTORY="Profile 2"
+    ```
+  </Accordion>
+
+  <Accordion title="'Could not decrypt cookie' error">
+    This usually means Chrome was open when `ft sync` ran, or the wrong profile was specified. Steps:
+
+    1. Quit Chrome completely with **Cmd+Q**.
+    2. Re-run `ft sync`.
+    3. If it still fails, try specifying the profile explicitly with `--chrome-profile-directory`.
+    4. As a fallback, use the [OAuth API sync](/syncing/oauth-api) method (`ft auth && ft sync --api`), which does not require cookie access.
+  </Accordion>
+
+  <Accordion title="Sync paused before finishing">
+    The sync stops automatically after 30 minutes (`--max-minutes 30`) or 500 pages (`--max-pages 500`) to avoid long-running processes. The stop reason is printed at the end of each run:
+
+    - `Paused after 30 minutes` — run `ft sync` again to continue from where it left off (incremental mode picks up automatically).
+    - `Paused after reaching page limit` — use `--max-pages` to increase the limit, or run `ft sync` again.
+
+    For a deep first-time crawl, consider increasing both limits:
+
+    ```bash
+    ft sync --full --max-pages 1000 --max-minutes 60
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Security
+
+- **Cookies are never stored.** They are read into memory, used for the sync request, and then discarded.
+- **Keychain access.** The macOS Keychain is queried once per sync to retrieve the Chrome Safe Storage decryption key. You may be prompted to allow access the first time.
+- **No telemetry.** The CLI only makes network requests to `x.com` during sync. Nothing is sent to Field Theory servers.
+
+<Tip>
+  To remove all locally stored data: `rm -rf ~/.ft-bookmarks`
+</Tip>

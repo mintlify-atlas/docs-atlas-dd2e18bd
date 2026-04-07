@@ -1,97 +1,69 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Field Theory CLI"
+description: "Sync and locally store all your X/Twitter bookmarks. Free and open source CLI for Mac."
 ---
 
-## Setting up
+Field Theory is a local-first CLI that downloads your X/Twitter bookmarks to your machine, builds a full-text search index, classifies them by topic, and makes them available to any AI agent with shell access. Your data never leaves your machine.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install with npm and get up and running in under a minute
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Sync your first bookmarks and search them in four commands
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Command Reference" icon="terminal" href="/commands/sync">
+    Full reference for every `ft` command and flag
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Agent Integration" icon="robot" href="/agents/overview">
+    Use your bookmarks with Claude Code, Codex, or any AI agent
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get started in 60 seconds
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Install Field Theory">
+    ```bash
+    npm install -g fieldtheory
+    ```
+    Requires Node.js 20+ and Google Chrome.
+  </Step>
+  <Step title="Open Chrome and log into X">
+    Field Theory reads your Chrome session to authenticate — no passwords or API keys needed.
+  </Step>
+  <Step title="Sync your bookmarks">
+    ```bash
+    ft sync
+    ```
+    Your bookmarks are downloaded and indexed in `~/.ft-bookmarks/`.
+  </Step>
+  <Step title="Search and explore">
+    ```bash
+    ft search "distributed systems"
+    ft viz
+    ft categories
+    ```
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## What Field Theory does
 
-## Need inspiration?
+<CardGroup cols={2}>
+  <Card title="Local sync" icon="database" href="/syncing/chrome-session">
+    Downloads all your bookmarks via Chrome session — no X API key required on Mac
+  </Card>
+  <Card title="Full-text search" icon="magnifying-glass" href="/explore/search">
+    BM25-ranked search across all your bookmarks using SQLite FTS5
+  </Card>
+  <Card title="Classification" icon="tags" href="/classify/categories">
+    Automatically tags bookmarks by category (tool, research, opinion, etc.) and subject domain
+  </Card>
+  <Card title="Terminal dashboard" icon="chart-bar" href="/explore/viz-dashboard">
+    ANSI sparklines, category breakdowns, and top authors — right in your terminal
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Field Theory is completely free and open source under the MIT license. All data is stored locally — no telemetry, no analytics, nothing sent externally during sync except requests to X's API.
+</Note>

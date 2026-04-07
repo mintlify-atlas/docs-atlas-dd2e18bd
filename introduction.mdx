@@ -1,0 +1,81 @@
+---
+title: "Introduction"
+description: "Field Theory is a local-first CLI for syncing, searching, and classifying your X/Twitter bookmarks — with no API key required on Mac."
+keywords: ["field theory", "x bookmarks", "twitter bookmarks", "cli", "local-first", "search"]
+---
+
+Field Theory gives you self-custody over your X/Twitter bookmarks. It downloads them to your machine, indexes them for full-text search, classifies them by topic, and exposes them to any AI agent with shell access. Your data never leaves your machine.
+
+<Note>
+  Field Theory is free and open source under the MIT license. No telemetry, no analytics. Network requests go only to X's API during sync.
+</Note>
+
+## Who it's for
+
+Field Theory is designed for people who use X/Twitter as a research and reading tool — engineers, researchers, writers, and anyone who has accumulated hundreds or thousands of bookmarks and wants to actually use them.
+
+It works especially well as a knowledge layer for AI coding agents. You can tell Claude Code or any shell-capable agent to search your bookmarks and it will know how to use the `ft` CLI.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="No API key needed" icon="key" href="/syncing/chrome-session">
+    On macOS, `ft sync` reads your Chrome session to authenticate with X — no developer account or OAuth setup required.
+  </Card>
+  <Card title="Full-text search" icon="magnifying-glass" href="/explore/search">
+    BM25-ranked search across all your bookmarks using a local SQLite FTS5 index. Supports `AND`, `OR`, `NOT`, and exact phrases.
+  </Card>
+  <Card title="LLM classification" icon="tags" href="/classify/llm">
+    Classify every bookmark by category (tool, research, opinion, etc.) and subject domain using your local Claude or Codex CLI.
+  </Card>
+  <Card title="Terminal dashboard" icon="chart-bar" href="/explore/viz-dashboard">
+    `ft viz` renders an ANSI sparkline dashboard with category breakdowns, top authors, and bookmarking trends over time.
+  </Card>
+  <Card title="Agent integration" icon="robot" href="/agents/overview">
+    Works with Claude Code, Codex, or any AI agent with shell access. Agents already know the `ft` CLI commands.
+  </Card>
+  <Card title="Local-first data" icon="database" href="/configuration/data-directory">
+    All data is stored in `~/.ft-bookmarks/` as plain JSONL and SQLite files. No cloud, no accounts, no lock-in.
+  </Card>
+</CardGroup>
+
+## How it works
+
+```
+Chrome cookies → X GraphQL API → JSONL cache → SQLite FTS5 index
+                                       ↓
+                              Regex / LLM classification
+                                       ↓
+                            Search / List / Viz / Agents
+```
+
+On first run, `ft sync` extracts your X session from Chrome's local cookie store (via macOS Keychain), uses it to authenticate a single sync request, and discards it — cookies are never written to disk separately.
+
+Downloaded bookmarks are stored in `~/.ft-bookmarks/bookmarks.jsonl` and merged into a SQLite full-text search index. Incremental syncs only fetch bookmarks newer than your last sync.
+
+## Data stored locally
+
+```
+~/.ft-bookmarks/
+  bookmarks.jsonl         # raw bookmark cache, one record per line
+  bookmarks.db            # SQLite FTS5 search index
+  bookmarks-meta.json     # sync metadata
+  oauth-token.json        # OAuth token (only if using API mode)
+```
+
+## Navigation
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install with npm and verify the setup
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Sync your first bookmarks in under a minute
+  </Card>
+  <Card title="Syncing bookmarks" icon="arrows-rotate" href="/syncing/chrome-session">
+    Chrome session sync, OAuth API sync, and scheduling
+  </Card>
+  <Card title="Command reference" icon="terminal" href="/commands/sync">
+    Every `ft` command and option documented
+  </Card>
+</CardGroup>

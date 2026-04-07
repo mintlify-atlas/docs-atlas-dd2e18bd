@@ -1,0 +1,125 @@
+---
+title: "Statistics and distributions"
+description: "Understand your bookmark collection with ft stats, ft categories, ft domains, ft status, and ft path."
+keywords: ["stats", "statistics", "categories", "domains", "status", "path", "authors", "languages"]
+---
+
+Field Theory CLI provides several commands for getting aggregate statistics and distribution breakdowns from your bookmark collection without opening a dashboard.
+
+## ft stats
+
+Prints aggregate statistics across your entire bookmark collection.
+
+```bash
+ft stats
+```
+
+```
+Bookmarks: 1,102
+Unique authors: 487
+Date range: 2019-03-14 to 2026-03-28
+
+Top authors:
+  @karpathy: 48
+  @simonw: 31
+  @antirez: 24
+  @tldraw: 19
+  @fasterthanlime: 17
+
+Languages:
+  en: 1,048
+  ja: 24
+  fr: 12
+  de: 8
+  zh: 6
+```
+
+The output includes:
+
+- **Total bookmarks** — how many records are in your local index
+- **Unique authors** — number of distinct `@handles` across all bookmarks
+- **Date range** — earliest and latest `posted_at` dates in your collection
+- **Top authors** — the 15 most-bookmarked voices, sorted by count
+- **Languages** — top 10 detected tweet languages by count
+
+<Note>
+`ft stats` requires a built search index. Run `ft index` first if you see an error.
+</Note>
+
+## ft categories
+
+Prints a ranked table of your bookmark categories with percentages.
+
+```bash
+ft categories
+```
+
+```
+  research          312  (28.4%)
+  tool              218  (19.8%)
+  technique         187  (17.0%)
+  opinion           143  (13.0%)
+  launch             98   (8.9%)
+  security           72   (6.6%)
+  commerce           68   (6.2%)
+```
+
+Categories are assigned by `ft classify`. If no categories appear, run `ft classify` first.
+
+## ft domains
+
+Prints a ranked table of subject domains with percentages.
+
+```bash
+ft domains
+```
+
+```
+  ai                   387  (35.1%)
+  devtools             214  (19.4%)
+  systems              156  (14.2%)
+  security              98   (8.9%)
+  finance               72   (6.5%)
+  biotech               41   (3.7%)
+  design                38   (3.5%)
+```
+
+Domains represent subject areas (not web domains) and are assigned by `ft classify`. If no domains appear, run `ft classify` first.
+
+## ft status
+
+Shows sync status and data location.
+
+```bash
+ft status
+```
+
+```
+Bookmarks
+  bookmarks: 1,102
+  last updated: 2026-03-28T14:22:11.000Z
+  sync mode: Incremental by default (GraphQL)
+  cache: /Users/you/.ft-bookmarks/twitter-bookmarks.jsonl
+```
+
+Useful for confirming that your data is up to date and checking where your cache file lives.
+
+## ft path
+
+Prints the path to your local data directory and exits. No other output.
+
+```bash
+ft path
+```
+
+```
+/Users/you/.ft-bookmarks
+```
+
+<Tip>
+Use `ft path` in shell scripts to locate your data directory without hardcoding the path. For example: `ls "$(ft path)"` lists the contents of your data directory.
+</Tip>
+
+<Info>
+All data is stored locally in `~/.ft-bookmarks/`. Nothing is sent to any server. The cache file is a JSONL file; the search index is a SQLite database.
+</Info>

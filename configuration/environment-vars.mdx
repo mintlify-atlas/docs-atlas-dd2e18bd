@@ -1,0 +1,137 @@
+---
+title: "Environment variables"
+description: "All environment variables recognized by Field Theory CLI and where to set them."
+keywords: ["environment variables", "FT_DATA_DIR", "FT_CHROME_USER_DATA_DIR", "X_API_KEY", "dotenv", "configuration"]
+---
+
+Field Theory CLI reads configuration from environment variables. You can set them in your shell, or place them in a `.env` or `.env.local` file.
+
+## Where to set variables
+
+The CLI looks for `.env` files in the following order, applying each one it finds:
+
+1. `.env.local` in the current working directory
+2. `.env` in the current working directory
+3. `.env.local` inside the data directory (`~/.ft-bookmarks/` by default)
+4. `.env` inside the data directory
+
+<Tip>Put credentials in `~/.ft-bookmarks/.env.local` so they apply regardless of which directory you run `ft` from, and are not accidentally committed to a project repository.</Tip>
+
+## Data directory
+
+<ParamField path="FT_DATA_DIR" type="string">
+  Override the default data directory (`~/.ft-bookmarks/`). The directory is created automatically if it does not exist.
+
+  ```bash
+  FT_DATA_DIR=/Volumes/External/ft-bookmarks
+  ```
+</ParamField>
+
+## Chrome session variables
+
+These variables apply to `ft sync` (the default Chrome session sync). They are not needed for `ft sync --api`.
+
+<ParamField path="FT_CHROME_USER_DATA_DIR" type="string">
+  Path to Chrome's user data directory. Detected automatically by platform if not set:
+
+  | Platform | Default path |
+  |----------|-------------|
+  | macOS | `~/Library/Application Support/Google/Chrome` |
+  | Linux | `~/.config/google-chrome` |
+  | Windows | `~/AppData/Local/Google/Chrome/User Data` |
+
+  Set this if you use a non-standard Chrome installation or a Chromium-based browser:
+
+  ```bash
+  FT_CHROME_USER_DATA_DIR="/Applications/Chromium.app/Contents/MacOS/../../../Chrome User Data"
+  ```
+</ParamField>
+
+<ParamField path="FT_CHROME_PROFILE_DIRECTORY" type="string" default="Default">
+  The profile directory name inside the Chrome user data directory. Corresponds to the folder name Chrome uses internally (e.g., `Default`, `Profile 1`, `Profile 2`).
+
+  ```bash
+  FT_CHROME_PROFILE_DIRECTORY="Profile 1"
+  ```
+
+  To find which profile you are using: open `chrome://version/` in Chrome and look at the **Profile Path** field — the last path component is the directory name.
+</ParamField>
+
+## X API variables
+
+These variables are only required for `ft sync --api`. They are **not needed** for the default Chrome session sync.
+
+<Note>To get these credentials, create a project and app at [developer.x.com](https://developer.x.com). You need OAuth 2.0 enabled with the `bookmark.read` scope.</Note>
+
+<ParamField path="X_API_KEY" type="string">
+  Your X (Twitter) API key. Also accepted as `X_CONSUMER_KEY` for compatibility with older tooling.
+
+  ```bash
+  X_API_KEY=your_api_key_here
+  # or
+  X_CONSUMER_KEY=your_api_key_here
+  ```
+</ParamField>
+
+<ParamField path="X_API_SECRET" type="string">
+  Your X API secret. Also accepted as `X_SECRET_KEY`.
+
+  ```bash
+  X_API_SECRET=your_api_secret_here
+  # or
+  X_SECRET_KEY=your_api_secret_here
+  ```
+</ParamField>
+
+<ParamField path="X_CLIENT_ID" type="string">
+  Your X OAuth 2.0 client ID.
+
+  ```bash
+  X_CLIENT_ID=your_client_id_here
+  ```
+</ParamField>
+
+<ParamField path="X_CLIENT_SECRET" type="string">
+  Your X OAuth 2.0 client secret.
+
+  ```bash
+  X_CLIENT_SECRET=your_client_secret_here
+  ```
+</ParamField>
+
+<ParamField path="X_BEARER_TOKEN" type="string">
+  X bearer token. Optional — only needed for certain API endpoints.
+
+  ```bash
+  X_BEARER_TOKEN=your_bearer_token_here
+  ```
+</ParamField>
+
+<ParamField path="X_CALLBACK_URL" type="string" default="http://127.0.0.1:3000/callback">
+  The OAuth callback URL used during `ft auth`. The default works for local use. Change this only if port 3000 is unavailable or you need a different loopback address.
+
+  ```bash
+  X_CALLBACK_URL=http://127.0.0.1:8080/callback
+  ```
+
+  <Warning>Whatever URL you set here must also be registered as an allowed callback URL in your app's settings at [developer.x.com](https://developer.x.com).</Warning>
+</ParamField>
+
+## Example `.env.local` for API mode
+
+```bash
+# ~/.ft-bookmarks/.env.local
+
+X_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxx
+X_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+X_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxx
+X_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+## Example `.env.local` for a custom Chrome profile
+
+```bash
+# ~/.ft-bookmarks/.env.local
+
+FT_CHROME_PROFILE_DIRECTORY=Profile 2
+```

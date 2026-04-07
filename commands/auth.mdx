@@ -1,0 +1,34 @@
+---
+title: "ft auth"
+description: "Set up OAuth 2.0 for API-based sync"
+---
+
+Launch the OAuth 2.0 PKCE flow to authenticate with the Twitter/X API. This is only required if you want to use `ft sync --api` (the official v2 API). The default `ft sync` uses your Chrome session and does not require OAuth.
+
+## Usage
+
+```bash
+ft auth
+```
+
+## Options
+
+`ft auth` has no options.
+
+## Examples
+
+```bash
+# Start the OAuth flow
+ft auth
+
+# After completing auth, sync using the API
+ft sync --api
+```
+
+## Notes
+
+- `ft auth` opens a browser window for you to authorize the Field Theory CLI with your X account. After completing the flow, an OAuth token is saved to `~/.ft-bookmarks/oauth-token.json`.
+- The token file is created with `chmod 600` (owner read/write only). Treat it like a password — do not commit it to version control.
+- OAuth authentication is **optional**. The default `ft sync` uses your Chrome session and requires no API setup.
+- Use `ft sync --api` when Chrome session sync is unavailable (Linux, Windows, or CI environments).
+- If the token expires, run `ft auth` again to refresh it.

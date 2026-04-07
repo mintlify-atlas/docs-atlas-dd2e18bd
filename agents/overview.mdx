@@ -1,0 +1,126 @@
+---
+title: "Agent Integration"
+description: "Make your X/Twitter bookmarks available to any AI agent with shell access."
+---
+
+Field Theory turns your local bookmark archive into a knowledge base that any AI agent can query directly through the `ft` CLI. No APIs, no plugins, no special configuration — if the agent can run a shell command, it can search your bookmarks.
+
+## How it works
+
+After you run `ft sync`, your bookmarks are stored locally in a SQLite full-text search index at `~/.ft-bookmarks/`. Any agent with shell access can call `ft` commands to query that index and retrieve structured results.
+
+The agent reads only what it explicitly requests. There is no passive data sharing, no background access, and no network calls during query time — everything happens locally.
+
+## Supported agents
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal">
+    Works out of the box. Claude Code can run shell commands and already understands the `ft` CLI.
+  </Card>
+  <Card title="OpenAI Codex" icon="terminal">
+    Any Codex-based agent with shell tool access can call `ft` commands directly.
+  </Card>
+  <Card title="Any shell-capable agent" icon="terminal">
+    If the agent can execute shell commands, it can use Field Theory — no special integration needed.
+  </Card>
+</CardGroup>
+
+## Key commands for agents
+
+These are the commands agents use most often when working with your bookmarks:
+
+| Command | What it does |
+|---|---|
+| `ft search <query>` | Full-text search with BM25 ranking |
+| `ft list` | List bookmarks with filters |
+| `ft list --json` | Machine-readable list output |
+| `ft show <id>` | Show one bookmark in detail |
+| `ft show <id> --json` | Machine-readable detail output |
+| `ft categories` | Show category distribution |
+| `ft stats` | Top authors, languages, date range |
+
+### Search
+
+```bash
+ft search "cancer research"
+ft search "machine learning" --after 2023-01-01 --limit 50
+ft search "open source memory tools"
+```
+
+`ft search` accepts full FTS5 syntax including `AND`, `OR`, `NOT`, and `"exact phrases"`.
+
+### List with filters
+
+```bash
+# Filter by category
+ft list --category research --limit 50
+
+# Filter by domain and date range
+ft list --domain ai --after 2024-01-01
+
+# Filter by author
+ft list --author karpathy --limit 20
+```
+
+### JSON output
+
+Use `--json` on `list` and `show` to get structured output that agents can parse programmatically:
+
+```bash
+# Get a JSON array of matching bookmarks
+ft list --category tool --json
+
+# Get full JSON detail for a specific bookmark
+ft show 1234567890 --json
+```
+
+<Note>
+  The `--json` flag outputs valid JSON to stdout. Agents can pipe this into their context or parse it directly.
+</Note>
+
+### Stats and categories
+
+```bash
+# See what categories exist and how many bookmarks are in each
+ft categories
+
+# Aggregate statistics: total count, top authors, date range
+ft stats
+```
+
+## No special setup required
+
+Agents do not need API keys, OAuth tokens, or any configuration beyond what you've already set up. As long as Field Theory is installed and you've run `ft sync` at least once, an agent can start querying immediately.
+
+```bash
+# Install once
+npm install -g fieldtheory
+
+# Sync your bookmarks (run on your machine, not by the agent)
+ft sync
+```
+
+After that, just tell your agent to use the `ft` CLI.
+
+## Privacy
+
+<Info>
+  The agent only sees what it explicitly requests. There is no background access to your bookmarks, no telemetry, and no data leaves your machine during agent queries. The `ft` CLI makes network requests only during `ft sync`.
+</Info>
+
+Your bookmarks are stored at `~/.ft-bookmarks/` and are only accessible to processes running under your user account. The agent retrieves specific results by running CLI commands — it does not have bulk access to your raw data unless you explicitly ask it to process everything.
+
+## Recommended pre-agent setup
+
+Before handing off to an agent, run classification so the agent can filter by category and subject domain:
+
+```bash
+# Sync and classify in one step
+ft sync --classify
+
+# Or classify separately after syncing
+ft sync
+ft classify
+```
+
+This lets agents run targeted queries like `ft list --category research` or `ft list --domain ai` instead of having to search through everything unfiltered.

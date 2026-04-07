@@ -1,0 +1,122 @@
+---
+title: "ft status"
+description: "Show sync status, data directory path, and download media assets"
+---
+
+Utility commands for checking your local data state and managing media: `ft status`, `ft path`, and `ft fetch-media`.
+
+## Usage
+
+```bash
+ft status
+ft path
+ft fetch-media [options]
+```
+
+---
+
+## ft status
+
+Print a summary of the current sync state: total bookmark count, last sync time, and data directory location.
+
+### Options
+
+`ft status` has no options.
+
+### Examples
+
+```bash
+ft status
+```
+
+### Sample output
+
+```
+Bookmarks: 3842
+Last synced: 2025-04-06T07:03:12.000Z
+Data: /Users/alice/.ft-bookmarks
+```
+
+---
+
+## ft path
+
+Print the absolute path to the data directory. Useful for scripting, locating files manually, or passing the path to another tool.
+
+### Options
+
+`ft path` has no options.
+
+### Examples
+
+```bash
+# Print the data directory path
+ft path
+
+# Open the data directory in Finder (macOS)
+open "$(ft path)"
+
+# Check what files are stored
+ls "$(ft path)"
+
+# Back up the bookmark database
+cp "$(ft path)/bookmarks.db" ~/Desktop/bookmarks-backup.db
+```
+
+---
+
+## ft fetch-media
+
+Download image and media assets attached to your bookmarks. Assets are saved to `~/.ft-bookmarks/media/` and tracked in `~/.ft-bookmarks/media-manifest.json`.
+
+<Note>
+Only static images are downloaded (JPEG, PNG, GIF, WebP). Video files may be included depending on content type.
+</Note>
+
+### Options
+
+<ParamField query="--limit" type="number" default="100">
+  Maximum number of bookmarks to process. Each bookmark may have zero or more media assets.
+</ParamField>
+
+<ParamField query="--max-bytes" type="number" default="52428800">
+  Per-asset byte limit (default: 50 MB). Assets larger than this size are skipped with status `skipped_too_large`.
+</ParamField>
+
+### Examples
+
+```bash
+# Download media for the first 100 bookmarks
+ft fetch-media
+
+# Process more bookmarks
+ft fetch-media --limit 500
+
+# Lower the per-asset size limit to 10 MB
+ft fetch-media --max-bytes 10485760
+```
+
+The command outputs a JSON summary:
+
+```json
+{
+  "processed": 100,
+  "downloaded": 73,
+  "skippedTooLarge": 2,
+  "failed": 1,
+  "entries": [...]
+}
+```
+
+---
+
+## Notes
+
+- The default data directory is `~/.ft-bookmarks/`. Override it by setting the `FT_DATA_DIR` environment variable.
+- `ft status` requires at least one sync to have been completed. If no data exists, it exits with an error and suggests running `ft sync`.
+- To remove all local data: `rm -rf "$(ft path)"`.
+- Files in the data directory:
+  - `bookmarks.jsonl` — raw bookmark cache (one JSON record per line)
+  - `bookmarks.db` — SQLite FTS5 search index
+  - `bookmarks-meta.json` — sync metadata (last sync time, cursor)
+  - `oauth-token.json` — OAuth token, if using API mode

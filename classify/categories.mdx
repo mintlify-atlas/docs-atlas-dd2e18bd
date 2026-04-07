@@ -1,0 +1,157 @@
+---
+title: "Categories and domains"
+description: "Understand how Field Theory classifies your bookmarks into categories and subject domains."
+keywords: ["categories", "domains", "classification", "tool", "security", "technique", "launch", "research", "opinion", "commerce"]
+---
+
+Field Theory classifies each bookmark along two independent dimensions: **categories** (what kind of content it is) and **domains** (what field it belongs to). Categories are detected by both regex and LLM classifiers. Domains are assigned by the LLM only.
+
+## The 7 built-in categories
+
+A bookmark can belong to more than one category. For example, a blog post about building a security scanner in Rust is simultaneously `tool`, `security`, and `technique`.
+
+<CardGroup cols={2}>
+  <Card title="tool" icon="wrench">
+    GitHub repos, CLI tools, npm packages, open-source projects, and developer utilities. Also matched via links to `github.com`, `npmjs.com`, `pypi.org`, `crates.io`, and similar registries.
+  </Card>
+  <Card title="security" icon="shield">
+    CVEs, vulnerabilities, exploits, supply chain attacks, breaches, zero-days, RCE, privilege escalation, and malware.
+  </Card>
+  <Card title="technique" icon="book-open">
+    Tutorials, walkthroughs, "how I built X" threads, code patterns, architecture deep dives, and step-by-step guides.
+  </Card>
+  <Card title="launch" icon="rocket">
+    Product launches, shipping announcements, "just released", new versions (`v1.2`), beta and alpha announcements, and Product Hunt posts.
+  </Card>
+  <Card title="research" icon="flask">
+    ArXiv papers, academic studies, peer-reviewed findings, preprints, and links to journals like `nature.com` or `biorxiv.org`.
+  </Card>
+  <Card title="opinion" icon="message-square">
+    Hot takes, threads, analysis, commentary, "lessons learned", controversial or underrated takes, and "unpopular opinion" posts.
+  </Card>
+  <Card title="commerce" icon="shopping-cart">
+    Products for sale, shopping links, affiliate links (`geni.us`, `a.co`), discounts, coupons, and physical goods on `amazon.com` or `ebay.com`.
+  </Card>
+</CardGroup>
+
+### Primary category
+
+When a bookmark matches multiple categories, Field Theory assigns a **primary** category — the single best-fit label. The priority order is:
+
+`security` → `tool` → `technique` → `launch` → `research` → `opinion` → `commerce`
+
+This means a bookmark about a newly launched security tool gets `security` as its primary category, even though it also matches `tool` and `launch`.
+
+<Note>
+  Categories are non-exclusive. `ft categories` shows counts per category (a bookmark counted in multiple categories appears multiple times in totals).
+</Note>
+
+---
+
+## Subject domains
+
+Domains are a separate dimension from categories. Where a category answers "what kind of content is this?", a domain answers "what field is this about?"
+
+Domains are assigned exclusively by the LLM classifier (`ft classify` or `ft classify-domains`). The LLM picks from a set of well-known domain slugs and may create new ones when a bookmark clearly doesn't fit:
+
+| Domain | Examples |
+|--------|---------|
+| `ai` | LLM research, agent frameworks, ML tools |
+| `finance` | Market analysis, investing, crypto, trading |
+| `devops` | CI/CD, Docker, Kubernetes, infrastructure |
+| `web-dev` | Frontend frameworks, browser APIs, CSS |
+| `health` | Medical research, fitness, diet, biology |
+| `startups` | Funding, company building, growth |
+| `defense` | Military technology, geopolitics |
+| `design` | UI/UX, typography, visual tools |
+| `science` | Physics, chemistry, academic research |
+| `hardware` | Chips, electronics, embedded systems |
+| `robotics` | Autonomous systems, motor control |
+| `space` | Satellites, astronomy, launch vehicles |
+| `energy` | Batteries, solar, grid infrastructure |
+| `legal` | Regulation, IP, policy |
+| `gaming` | Game engines, releases, game design |
+| `media` | Journalism, film, podcasts |
+| `politics` | Elections, governance, public policy |
+| `education` | Learning, courses, pedagogy |
+
+The LLM prefers broad domains (`ai` rather than `ai-agents`, `finance` rather than `quantitative-trading`). A bookmark can have multiple domains — an AI tool for financial analysis would get `ai,finance`.
+
+---
+
+## Viewing distributions
+
+### Category distribution
+
+```bash
+ft categories
+```
+
+Prints a sorted table of how many bookmarks fall into each category:
+
+```
+  tool              1823  (38.4%)
+  technique          941  (19.8%)
+  research           612  (12.9%)
+  opinion            488  (10.3%)
+  launch             321   (6.8%)
+  security           198   (4.2%)
+  commerce            87   (1.8%)
+```
+
+<Info>
+  If no categories appear, run `ft classify` or `ft classify --regex` first.
+</Info>
+
+### Domain distribution
+
+```bash
+ft domains
+```
+
+Prints a sorted table of subject domain counts:
+
+```
+  ai                  987  (20.8%)
+  finance             432   (9.1%)
+  devops              388   (8.2%)
+  web-dev             301   (6.3%)
+  health              244   (5.1%)
+  ...
+```
+
+<Info>
+  If no domains appear, run `ft classify` or `ft classify-domains` first.
+</Info>
+
+### Sampling by category
+
+To see a random sample of bookmarks in a given category:
+
+```bash
+ft sample tool
+ft sample security
+ft sample research --limit 5
+```
+
+Valid category names: `tool`, `security`, `technique`, `launch`, `research`, `opinion`, `commerce`.
+
+---
+
+## Regex vs. LLM classification
+
+Field Theory offers two classification engines:
+
+| | Regex (`ft classify --regex`) | LLM (`ft classify`) |
+|--|--|--|
+| **Speed** | Entire corpus in under 1 second | ~2 minutes per 50 bookmarks |
+| **Cost** | Free | Requires Claude or Codex subscription |
+| **Accuracy** | Good for clear signals | Higher accuracy, catches edge cases |
+| **Domains** | Not supported | Yes — assigns subject domains |
+| **New categories** | Not supported | Can create new slugs when needed |
+
+Use regex as a fast, free first pass. Follow up with `ft classify` to fill in the gaps and assign domains.
+
+<Tip>
+  Run `ft classify --regex` immediately after your first `ft sync`. Then run `ft classify` whenever you want higher accuracy or domain assignments.
+</Tip>

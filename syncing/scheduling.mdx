@@ -1,0 +1,131 @@
+---
+title: "Scheduling sync"
+description: "Automate bookmark sync with cron or launchd so your local archive stays up to date without manual runs."
+---
+
+Running `ft sync` on a schedule keeps your local bookmark archive fresh. The default incremental sync is fast — it stops as soon as it catches up to bookmarks already stored — so it is well-suited for frequent, automated runs.
+
+## Incremental vs full sync
+
+| Mode | Command | When to use |
+|------|---------|-------------|
+| Incremental (default) | `ft sync` | Daily or hourly scheduled runs. Fetches only new bookmarks since the last sync. |
+| Full crawl | `ft sync --full` | First-time setup, or to recover any gaps in your history. |
+
+Incremental sync stops with the message `All caught up — no new bookmarks since last sync.` when there is nothing new to fetch. It exits cleanly with code 0, making it safe to run on a schedule.
+
+## Cron
+
+Add a line to your crontab with `crontab -e`:
+
+```bash
+# Sync every morning at 7am
+0 7 * * * ft sync
+
+# Sync and classify new bookmarks every morning at 7am
+0 7 * * * ft sync --classify
+```
+
+<Tip>
+  Run `which ft` to find the full path to the `ft` binary. Cron often runs with a minimal `PATH`, so using the full path avoids `command not found` errors:
+
+  ```bash
+  0 7 * * * /usr/local/bin/ft sync
+  ```
+</Tip>
+
+### Cron environment
+
+Cron jobs run with a minimal environment. If you use OAuth API sync (`ft sync --api`), make sure your `.env` file is at `~/.ft-bookmarks/.env` — `ft` always checks that location regardless of the working directory.
+
+```bash
+# Works in cron — reads credentials from ~/.ft-bookmarks/.env
+0 7 * * * /usr/local/bin/ft sync --api
+```
+
+## Combining sync with classify
+
+The `--classify` flag runs LLM-based classification on new bookmarks immediately after syncing:
+
+```bash
+ft sync --classify
+```
+
+This is equivalent to running `ft sync` followed by `ft classify`, but in a single command. Use it in scheduled runs if you want new bookmarks to be categorized automatically.
+
+<Note>
+  `--classify` requires either the `claude` CLI (Claude Code) or `codex` CLI (OpenAI Codex) to be installed and authenticated. Classification is skipped if no LLM CLI is found.
+</Note>
+
+### Cron with classification
+
+```bash
+# Sync and classify every morning at 7am
+0 7 * * * /usr/local/bin/ft sync --classify
+```
+
+## launchd (macOS)
+
+launchd is the macOS-native way to schedule tasks. It handles wake-from-sleep, unlike cron.
+
+Create a plist at `~/Library/LaunchAgents/dev.fieldtheory.sync.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.fieldtheory.sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/ft</string>
+    <string>sync</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>7</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/tmp/ft-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/ft-sync.log</string>
+</dict>
+</plist>
+```
+
+Load and enable it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/dev.fieldtheory.sync.plist
+```
+
+To unload:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/dev.fieldtheory.sync.plist
+```
+
+<Warning>
+  Chrome session sync reads the macOS Keychain, which requires an interactive session. If your Mac is logged out or the screen is locked, Keychain access may be denied. If you need sync to run reliably in the background, use [OAuth API sync](/syncing/oauth-api) (`ft sync --api`) instead.
+</Warning>
+
+## Checking sync status
+
+After a scheduled run, check when the last sync occurred and how many bookmarks you have:
+
+```bash
+ft status
+```
+
+Example output:
+
+```
+Last synced: 2h ago
+Total bookmarks: 3,241
+Data: /Users/you/.ft-bookmarks
+```

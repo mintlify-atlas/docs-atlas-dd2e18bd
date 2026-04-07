@@ -1,0 +1,34 @@
+---
+title: "ft viz"
+description: "Visual terminal dashboard of your bookmarking patterns"
+---
+
+Render an ANSI terminal dashboard that visualizes your bookmarking activity over time. Shows sparklines, category breakdowns, domain distributions, and top authors — all rendered directly in the terminal.
+
+## Usage
+
+```bash
+ft viz
+```
+
+## Options
+
+`ft viz` has no options.
+
+## Examples
+
+```bash
+# Open the visual dashboard
+ft viz
+
+# Pipe to a pager if the output is long
+ft viz | less -R
+```
+
+## Notes
+
+- Requires the search index to be built. Run `ft index` if you haven't yet.
+- The dashboard renders using ANSI escape codes and Unicode block characters. Use a terminal that supports both (iTerm2, Warp, or any modern terminal works well).
+- For best results, run in a terminal window that is at least 80 columns wide.
+- For numeric statistics (total bookmarks, top authors, language breakdown), use `ft stats`.
+- For category and domain counts as plain text, use `ft categories` and `ft domains`.

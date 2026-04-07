@@ -1,0 +1,139 @@
+---
+title: "List and filter bookmarks"
+description: "Browse and filter your bookmark collection with ft list, ft show, and ft sample."
+keywords: ["list", "filter", "show", "sample", "category", "domain", "json"]
+---
+
+`ft list` gives you a filterable view of your bookmarks. Unlike `ft search`, which ranks by full-text relevance, `ft list` returns results sorted by date and lets you slice by category, domain, author, and date range.
+
+## ft list
+
+```bash
+ft list
+```
+
+Prints the 30 most recent bookmarks with their ID, author, date, category tags, text excerpt, and URL.
+
+```
+1857341234567890  @karpathy  2024-11-14  research · ai
+  The scaling hypothesis has been the most important idea in ML...
+  https://x.com/karpathy/status/1857341234567890
+
+1830912345678901  @ylecun  2024-09-02  opinion · ai
+  Self-supervised learning is the future of machine intelligence...
+  https://x.com/ylecun/status/1830912345678901
+```
+
+### Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--query <query>` | Full-text filter (FTS5 syntax) | — |
+| `--author <handle>` | Filter by author handle | — |
+| `--after <date>` | Posted after this date (`YYYY-MM-DD`) | — |
+| `--before <date>` | Posted before this date (`YYYY-MM-DD`) | — |
+| `--category <name>` | Filter by category | — |
+| `--domain <name>` | Filter by subject domain | — |
+| `--limit <n>` | Max results | `30` |
+| `--offset <n>` | Skip this many results (for pagination) | `0` |
+| `--json` | Output as JSON array | — |
+
+### Filter by category
+
+Categories are assigned by `ft classify`. Common values include `tool`, `research`, `technique`, `opinion`, `launch`, `security`, and `commerce`.
+
+```bash
+ft list --category research
+ft list --category tool --limit 50
+```
+
+### Filter by subject domain
+
+Domains are the subject areas assigned by `ft classify` (e.g., `ai`, `finance`, `devtools`, `biotech`).
+
+```bash
+ft list --domain ai
+ft list --domain finance --after 2024-01-01
+```
+
+### Filter by author
+
+```bash
+ft list --author simonw
+ft list --author simonw --category tool
+```
+
+### Filter by date range
+
+```bash
+ft list --after 2024-06-01 --before 2024-12-31
+```
+
+### Combine filters
+
+```bash
+ft list --category research --domain ai --after 2024-01-01 --limit 20
+```
+
+### Paginate through results
+
+```bash
+# First page
+ft list --limit 30 --offset 0
+
+# Second page
+ft list --limit 30 --offset 30
+```
+
+## JSON output
+
+Add `--json` to get a structured JSON array. Each item includes the full set of fields: ID, tweet ID, URL, text, author, timestamps, categories, domains, GitHub URLs, links, media count, engagement counts, and more.
+
+```bash
+ft list --category tool --json
+ft list --author simonw --json | jq '.[].url'
+```
+
+<Tip>
+JSON output is useful for piping into `jq`, feeding into scripts, or passing to an AI agent. The full schema mirrors the `BookmarkTimelineItem` type in the source.
+</Tip>
+
+## ft show
+
+View a single bookmark in full detail by its ID.
+
+```bash
+ft show 1857341234567890
+```
+
+Output includes the full tweet text, URL, any extracted links, and assigned categories and domains.
+
+```
+1857341234567890 · @karpathy
+https://x.com/karpathy/status/1857341234567890
+The scaling hypothesis has been the most important idea in ML for the last 5 years...
+links: https://arxiv.org/abs/2001.08361
+categories: research
+domains: ai
+```
+
+Add `--json` to get the full structured record:
+
+```bash
+ft show 1857341234567890 --json
+```
+
+## ft sample
+
+Get a random sample of bookmarks from a specific category. Useful for spot-checking classification results or getting a feel for what's in a category.
+
+```bash
+ft sample research
+ft sample tool --limit 5
+```
+
+Valid categories depend on what you've classified. Common values: `tool`, `security`, `technique`, `launch`, `research`, `opinion`, `commerce`.
+
+<Note>
+`ft sample` requires bookmarks to be classified first. Run `ft classify` if you haven't done so. If a category has no bookmarks, the command will tell you.
+</Note>

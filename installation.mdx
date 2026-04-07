@@ -1,0 +1,73 @@
+---
+title: "Installation"
+description: "Install the Field Theory CLI with npm and verify your setup."
+keywords: ["install", "npm", "node.js", "macos", "requirements"]
+---
+
+## Requirements
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Node.js | 20 or later | Required. Check with `node --version`. |
+| Google Chrome | Any recent version | Required for default Chrome session sync on macOS. |
+| macOS | Any | Required for Chrome session sync. Linux and Windows can use OAuth API sync instead. |
+
+<Info>
+  Field Theory has no native bindings. All dependencies are pure JavaScript or WebAssembly, so there is no build step and no `node-gyp` compilation.
+</Info>
+
+## Install
+
+Install the `ft` command globally with npm:
+
+```bash
+npm install -g fieldtheory
+```
+
+This installs the `ft` binary to your npm global bin directory (usually `/usr/local/bin/ft` or `~/.npm-global/bin/ft`).
+
+<Tip>
+  If you see a permission error, your npm global bin directory may require elevated access. The recommended fix is to [configure npm to use a user-owned directory](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) rather than running `sudo npm install`.
+</Tip>
+
+## Verify the install
+
+Check that `ft` is on your PATH:
+
+```bash
+ft --version
+```
+
+Expected output:
+
+```
+1.2.1
+```
+
+To see all available commands:
+
+```bash
+ft --help
+```
+
+## Platform support
+
+Different sync methods are available depending on your platform.
+
+| Feature | macOS | Linux | Windows |
+|---------|:-----:|:-----:|:-------:|
+| Chrome session sync (`ft sync`) | Yes | No | No |
+| OAuth API sync (`ft sync --api`) | Yes | Yes | Yes |
+| Search, list, classify, viz | Yes | Yes | Yes |
+
+**Chrome session sync** reads cookies from Chrome's local database using macOS Keychain. This method requires no API key or developer account.
+
+**OAuth API sync** works on all platforms and uses X's official v2 API. It requires a one-time setup with `ft auth`. See [OAuth API sync](/syncing/oauth-api) for details.
+
+<Warning>
+  On Linux and Windows, Chrome's cookie store is not accessible in the same way. Use `ft auth` to set up OAuth, then run `ft sync --api` to sync your bookmarks.
+</Warning>
+
+## Next step
+
+Once installed, go to the [quickstart](/quickstart) to sync your first bookmarks.

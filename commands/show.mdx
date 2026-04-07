@@ -1,0 +1,87 @@
+---
+title: "ft show"
+description: "Show a single bookmark in detail"
+---
+
+Display the full details of one bookmark by its ID. Also documents `ft sample` for randomly browsing bookmarks by category.
+
+## Usage
+
+```bash
+ft show <id> [options]
+ft sample <category> [options]
+```
+
+---
+
+## ft show
+
+Show one bookmark in full detail, including its text, URL, extracted links, categories, and subject domains.
+
+### Arguments
+
+<ParamField path="id" type="string" required>
+  The bookmark ID. IDs are shown by `ft list`, `ft search`, and `ft sample`.
+</ParamField>
+
+### Options
+
+<ParamField query="--json" type="boolean">
+  Output the bookmark as a JSON object with all fields, including engagement metrics, media count, GitHub URLs, and classification data.
+</ParamField>
+
+### Examples
+
+```bash
+# Show a bookmark by ID
+ft show 1234567890abcdef
+
+# Get full JSON representation
+ft show 1234567890abcdef --json
+
+# Pipe to jq to extract a field
+ft show 1234567890abcdef --json | jq '.links'
+```
+
+---
+
+## ft sample
+
+Randomly sample bookmarks from a specific category. Useful for browsing what was classified into a category or for testing classification quality.
+
+### Arguments
+
+<ParamField path="category" type="string" required>
+  The category to sample from. Valid values: `tool`, `security`, `technique`, `launch`, `research`, `opinion`, `commerce`.
+</ParamField>
+
+### Options
+
+<ParamField query="--limit" type="number" default="10">
+  Maximum number of bookmarks to return.
+</ParamField>
+
+### Examples
+
+```bash
+# Sample 10 tool bookmarks
+ft sample tool
+
+# Sample 25 research bookmarks
+ft sample research --limit 25
+
+# Browse security finds
+ft sample security
+
+# Check what was classified as opinion
+ft sample opinion --limit 5
+```
+
+---
+
+## Notes
+
+- Both commands require the search index. Run `ft index` if you haven't yet.
+- `ft sample` requires bookmarks to be classified first. Run `ft classify` if results are empty.
+- `ft sample` uses `ORDER BY RANDOM()` — results vary between runs.
+- Bookmark IDs in the output of `ft list` and `ft search` can be passed directly to `ft show`.

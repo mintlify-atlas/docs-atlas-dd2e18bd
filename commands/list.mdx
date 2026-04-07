@@ -1,0 +1,90 @@
+---
+title: "ft list"
+description: "List and filter bookmarks"
+---
+
+Browse your bookmarks with flexible filtering by text, author, date, category, and subject domain. Results are sorted by most recent first. Use `--json` to get structured output suitable for scripting or agent use.
+
+## Usage
+
+```bash
+ft list [options]
+```
+
+## Options
+
+<ParamField query="--query" type="string">
+  Text query using FTS5 syntax. Filters by full-text match across bookmark content. Supports `AND`, `OR`, `NOT`, and `"exact phrase"` operators.
+</ParamField>
+
+<ParamField query="--author" type="string">
+  Filter to bookmarks by a specific author handle (without `@`). Case-insensitive.
+</ParamField>
+
+<ParamField query="--after" type="string">
+  Only include bookmarks posted after this date. Format: `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField query="--before" type="string">
+  Only include bookmarks posted before this date. Format: `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField query="--category" type="string">
+  Filter by classification category. Valid values: `tool`, `security`, `technique`, `launch`, `research`, `opinion`, `commerce`.
+</ParamField>
+
+<ParamField query="--domain" type="string">
+  Filter by subject domain (e.g., `ai`, `finance`, `security`). Domains are assigned by `ft classify-domains`.
+</ParamField>
+
+<ParamField query="--limit" type="number" default="30">
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField query="--offset" type="number" default="0">
+  Number of results to skip. Use with `--limit` to paginate through results.
+</ParamField>
+
+<ParamField query="--json" type="boolean">
+  Output results as a JSON array. Each item includes all bookmark fields: id, URL, text, author, dates, categories, domains, engagement counts, and links.
+</ParamField>
+
+## Examples
+
+```bash
+# List the 30 most recent bookmarks
+ft list
+
+# List bookmarks from a specific author
+ft list --author antirez
+
+# Filter by category
+ft list --category tool
+ft list --category research
+
+# Filter by subject domain
+ft list --domain ai
+ft list --domain finance
+
+# Combine category and date filters
+ft list --category security --after 2024-01-01
+
+# Filter by text query
+ft list --query "vector database"
+
+# Paginate — second page of results
+ft list --limit 30 --offset 30
+
+# Get JSON output for scripting
+ft list --category launch --json
+
+# Pipe JSON to jq
+ft list --author karpathy --json | jq '.[].url'
+```
+
+## Notes
+
+- Requires a built search index. Run `ft index` if needed.
+- Categories and domains are only populated after running `ft classify` or `ft classify-domains`.
+- For ranked relevance search, use `ft search` instead.
+- The `--json` output includes all fields stored in the database, including engagement metrics (likes, reposts, views) when available.

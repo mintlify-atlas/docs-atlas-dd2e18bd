@@ -1,0 +1,72 @@
+---
+title: "Security & privacy"
+description: "How Field Theory CLI handles your data, Chrome cookies, and API credentials."
+keywords: ["security", "privacy", "local-first", "cookies", "OAuth", "credentials", "telemetry"]
+---
+
+## Local-first design
+
+All data is stored on your machine. Field Theory CLI has no telemetry, no analytics, and no backend. The only network requests it makes are to X's API during `ft sync`.
+
+<Check>Nothing is sent to Field Theory's servers — there are no Field Theory servers.</Check>
+
+## Chrome session sync
+
+`ft sync` (the default, no `--api` flag) works by reading your X session cookie from Chrome's local database, using it to make a single authenticated request to X's API, then discarding it.
+
+- **Cookies are never stored.** The cookie is read from Chrome's SQLite database, used in memory for the sync request, and not written anywhere.
+- **No impersonation.** The sync uses the same authenticated session your browser already has — it does not create new credentials or request elevated permissions.
+- **macOS Keychain.** On macOS, Chrome encrypts its cookie database using a key stored in the system Keychain. Field Theory CLI uses the Keychain to decrypt cookies in memory, the same way Chrome itself does.
+
+<Info>Chrome session sync is only supported on macOS. On Linux and Windows, use `ft auth` + `ft sync --api` instead.</Info>
+
+## OAuth token storage
+
+If you run `ft auth` to set up API-based sync, an OAuth 2.0 token is written to `~/.ft-bookmarks/oauth-token.json` with file permissions set to `600` (owner read/write only).
+
+```bash
+ls -la ~/.ft-bookmarks/oauth-token.json
+# -rw------- 1 you staff 312 Apr 7 09:00 oauth-token.json
+```
+
+<Warning>Treat `oauth-token.json` like a password. Do not commit it to version control, share it, or include it in backups that are stored in untrusted locations.</Warning>
+
+## Default sync vs. API sync
+
+Field Theory CLI offers two sync methods with different security properties:
+
+<CardGroup cols={2}>
+  <Card title="Chrome session sync" icon="chrome">
+    **Default.** Uses X's internal GraphQL API — the same API that `x.com` uses in your browser. No API credentials required. Reads your existing browser session. macOS only.
+  </Card>
+  <Card title="OAuth API sync" icon="key">
+    **Optional (`--api` flag).** Uses X's official v2 API with OAuth 2.0. Requires API credentials. Cross-platform. Run `ft auth` to set up.
+  </Card>
+</CardGroup>
+
+Both methods read only your bookmarks. Neither method posts, deletes, or modifies anything on your account.
+
+## API credentials scope
+
+X API credentials (set via environment variables) are only loaded and used when you run `ft sync --api`. They are not read, validated, or transmitted during normal Chrome session sync.
+
+The OAuth flow requests the `bookmark.read` scope — read-only access to your bookmarks. No other permissions are requested.
+
+## Auditing network traffic
+
+To verify what network requests Field Theory CLI makes during a sync, you can use a tool like `mitmproxy` or `Proxyman` and route the CLI through it:
+
+```bash
+# Example: route through a local proxy for inspection
+HTTPS_PROXY=http://127.0.0.1:8080 ft sync
+```
+
+During sync, you will see requests only to `x.com` (for Chrome session sync) or `api.x.com` (for `--api` mode). No other hosts are contacted.
+
+## Credentials in `.env` files
+
+When using a `.env.local` file to store API credentials, follow standard secrets hygiene:
+
+- Store credentials in `~/.ft-bookmarks/.env.local`, not in a project directory that might be version-controlled.
+- Add `.env.local` and `.env` to your `.gitignore` if you do use a project directory.
+- Rotate credentials immediately if you suspect they have been exposed.

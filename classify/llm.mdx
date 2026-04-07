@@ -1,0 +1,141 @@
+---
+title: "LLM classification"
+description: "Classify bookmarks by category and subject domain using Claude or Codex — no API keys required."
+keywords: ["classify", "LLM", "claude", "codex", "domains", "categories", "AI classification"]
+---
+
+`ft classify` sends your bookmarks to a locally installed Claude or Codex CLI for classification. No API keys are required — it uses your existing subscription via the CLI you already have installed.
+
+## Requirements
+
+You need one of the following CLIs installed and authenticated:
+
+<CardGroup cols={2}>
+  <Card title="Claude Code" icon="asterisk" href="https://docs.anthropic.com/en/docs/claude-code">
+    Requires a Claude Pro or Max subscription. Install with `npm install -g @anthropic-ai/claude-code`.
+  </Card>
+  <Card title="Codex CLI" icon="terminal" href="https://github.com/openai/codex">
+    Requires an OpenAI subscription. Install with `npm install -g @openai/codex`.
+  </Card>
+</CardGroup>
+
+Field Theory detects whichever CLI is available in your `PATH`. If both are installed, Claude takes precedence.
+
+<Warning>
+  If neither `claude` nor `codex` is found in your `PATH`, `ft classify` will exit with an error pointing you to the installation links above.
+</Warning>
+
+---
+
+## Running classification
+
+### Classify categories and domains
+
+```bash
+ft classify
+```
+
+This runs two passes in sequence:
+
+1. **Categories** — classifies each unclassified bookmark into one or more of the 7 built-in types (`tool`, `security`, `technique`, `launch`, `research`, `opinion`, `commerce`), or creates a new category slug when none fit.
+2. **Domains** — assigns subject domains (`ai`, `finance`, `devops`, etc.) to bookmarks that don't yet have one.
+
+Progress is printed as each batch completes:
+
+```
+Classifying categories with LLM (batches of 50, ~2 min per batch)...
+  Categories: 0/1240 (0%) | 0s elapsed
+  Categories: 50/1240 (4%) | 118s elapsed
+  ...
+✓ 1198 categorized
+
+Classifying domains with LLM (batches of 50, ~2 min per batch)...
+  Domains: 0/1240 (0%) | 0s elapsed
+  ...
+✓ 1201 domains assigned
+```
+
+### Classify domains only
+
+To run only the domain pass — for example, if categories are already set but domains are missing:
+
+```bash
+ft classify-domains
+```
+
+By default this only processes bookmarks that don't yet have a domain. To reclassify all bookmarks regardless:
+
+```bash
+ft classify-domains --all
+```
+
+<Note>
+  `--all` is useful when you want to improve domain assignments after the LLM has been updated, or when you've added many new bookmarks with different topics.
+</Note>
+
+---
+
+## How it works
+
+<Steps>
+  <Step title="Fetch unclassified bookmarks">
+    Field Theory queries the SQLite index for bookmarks where `primary_category` is `unclassified` or `NULL`. For domain classification, it queries bookmarks where `primary_domain` is `NULL` (or all bookmarks if `--all` is passed).
+  </Step>
+  <Step title="Build batches of 50">
+    Bookmarks are shuffled randomly and grouped into batches of 50. Each batch is sent to the LLM as a single prompt containing the tweet text, author handle, and any extracted links.
+  </Step>
+  <Step title="Send prompt and parse response">
+    The LLM is instructed to return a JSON array with one entry per bookmark — each with an `id`, a `categories` array, and a `primary` field. Field Theory validates the response and discards any entries with unrecognized IDs or malformed output.
+  </Step>
+  <Step title="Write to SQLite and save">
+    Matching results are written to the `bookmarks` table (`categories`, `primary_category` columns for category runs; `domains`, `primary_domain` for domain runs). The database is saved to disk after every batch so progress isn't lost if the process is interrupted.
+  </Step>
+</Steps>
+
+Each batch takes roughly 1–2 minutes depending on your LLM CLI and subscription tier. A corpus of 1,000 unclassified bookmarks takes around 20–40 minutes end to end.
+
+---
+
+## Combining with sync
+
+To classify new bookmarks automatically after every sync:
+
+```bash
+ft sync --classify
+```
+
+This runs `ft sync` and then calls the same LLM classification pipeline on only the newly added bookmarks. Existing classifications are untouched.
+
+You can schedule this with cron to keep everything up to date:
+
+```bash
+# Sync and classify every morning at 7am
+0 7 * * * ft sync --classify
+```
+
+---
+
+## Classification is additive
+
+The LLM classifier only processes bookmarks that are **not yet classified**. Running `ft classify` multiple times is safe — it will skip bookmarks that already have a `primary_category` set.
+
+To force reclassification of all bookmarks, you would need to clear the `categories` and `primary_category` columns manually. For domain reclassification only, use `ft classify-domains --all`.
+
+<Tip>
+  If you want a quick pass before running the LLM, use `ft classify --regex` first. The regex classifier is instant and free. Then run `ft classify` to fill in the remaining unclassified bookmarks with higher accuracy.
+</Tip>
+
+---
+
+## LLM vs. regex
+
+| | LLM | Regex |
+|--|--|--|
+| **Accuracy** | Higher — understands context and nuance | Lower — depends on exact keyword matches |
+| **Domains** | Yes | No |
+| **New categories** | Yes — creates slugs when needed | No |
+| **Speed** | ~2 min per 50 bookmarks | Under 1 second for the entire corpus |
+| **Cost** | Requires Claude or Codex subscription | Free |
+| **Offline** | No | Yes |
+
+Use regex when you want instant, free, offline classification. Use LLM when you want the best accuracy and domain assignments.

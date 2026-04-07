@@ -1,0 +1,115 @@
+---
+title: "ft stats"
+description: "View statistics about your bookmark collection"
+---
+
+Three commands provide different views into your bookmark collection: `ft stats` for aggregate numbers, `ft categories` for category distribution, and `ft domains` for subject domain distribution.
+
+## Usage
+
+```bash
+ft stats
+ft categories
+ft domains
+```
+
+---
+
+## ft stats
+
+Print aggregate statistics about your bookmarks: total count, unique author count, date range, top authors by bookmark count, and language breakdown.
+
+### Options
+
+`ft stats` has no options.
+
+### Examples
+
+```bash
+ft stats
+```
+
+### Sample output
+
+```
+Bookmarks: 3842
+Unique authors: 614
+Date range: 2021-03-12 to 2025-04-06
+
+Top authors:
+  @karpathy: 47
+  @antirez: 31
+  @dan_abramov: 28
+  ...
+
+Languages:
+  en: 3601
+  ja: 112
+  de: 45
+  ...
+```
+
+---
+
+## ft categories
+
+Show the count and percentage of bookmarks in each category. Categories are assigned by `ft classify`. Results are sorted by count, highest first.
+
+### Options
+
+`ft categories` has no options.
+
+### Examples
+
+```bash
+ft categories
+```
+
+### Sample output
+
+```
+  tool              987  (25.7%)
+  technique         743  (19.3%)
+  research          612  (15.9%)
+  opinion           534  (13.9%)
+  launch            421  (11.0%)
+  security          298   (7.8%)
+  commerce           89   (2.3%)
+```
+
+---
+
+## ft domains
+
+Show the count and percentage of bookmarks in each subject domain. Domains are assigned by `ft classify-domains`. Results are sorted by count, highest first.
+
+### Options
+
+`ft domains` has no options.
+
+### Examples
+
+```bash
+ft domains
+```
+
+### Sample output
+
+```
+  ai                    1204  (31.3%)
+  devtools               487  (12.7%)
+  security               341   (8.9%)
+  web                    298   (7.8%)
+  finance                201   (5.2%)
+  ...
+```
+
+---
+
+## Notes
+
+- All three commands require the search index. Run `ft index` if needed.
+- `ft categories` will show a prompt to run `ft classify` if no categories have been assigned yet.
+- `ft domains` will show a prompt to run `ft classify-domains` if no domains have been assigned yet.
+- For a visual representation of your data, use `ft viz`.
+- To filter bookmarks by category or domain, use `ft list --category <name>` or `ft list --domain <name>`.

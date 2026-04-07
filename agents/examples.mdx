@@ -1,0 +1,199 @@
+---
+title: "Agent Examples"
+description: "Real prompts and workflows for using Field Theory with AI agents."
+---
+
+These examples show how to give an agent access to your bookmarks and what kinds of tasks it can perform. All examples assume you have run `ft sync` and the `ft` CLI is available in the agent's shell environment.
+
+## How to tell an agent to use Field Theory
+
+The simplest instruction is:
+
+> "Use the `ft` CLI to search my bookmarks for..."
+
+Agents like Claude Code already understand the `ft` command structure. You do not need to explain the commands — just point the agent at a task.
+
+<Tip>
+  Run `ft sync --classify` before starting an agent session so the agent can filter by category and domain. This makes queries significantly more precise.
+</Tip>
+
+---
+
+## Example prompts
+
+These prompts come directly from real Field Theory workflows:
+
+### Research synthesis
+
+> "What have I bookmarked about cancer research in the last three years and how has it progressed?"
+
+The agent will:
+
+<Steps>
+  <Step title="Search for relevant bookmarks">
+    ```bash
+    ft search "cancer research" --after 2022-01-01 --limit 50
+    ```
+  </Step>
+  <Step title="Retrieve full detail on the most relevant results">
+    ```bash
+    ft show 1823456789012345 --json
+    ft show 1756234901234567 --json
+    ```
+  </Step>
+  <Step title="Synthesize a timeline">
+    The agent reads the content, dates, and authors to produce a summary of how the research has developed over the period.
+  </Step>
+</Steps>
+
+---
+
+### Bookmark-driven development
+
+> "I bookmarked a number of new open source AI memory tools. Pick the best one and figure out how to incorporate it in this repo."
+
+The agent will:
+
+<Steps>
+  <Step title="Find tool bookmarks in the AI domain">
+    ```bash
+    ft list --category tool --domain ai --json
+    ```
+  </Step>
+  <Step title="Get details on each candidate">
+    ```bash
+    ft show <id> --json
+    ```
+    The agent extracts GitHub URLs and any linked resources from the bookmark data.
+  </Step>
+  <Step title="Evaluate and recommend">
+    The agent compares the tools against the current codebase and selects the best fit.
+  </Step>
+  <Step title="Integrate">
+    The agent writes the integration code directly in the repo, citing the bookmark as its source.
+  </Step>
+</Steps>
+
+---
+
+### Automated daily sync
+
+> "Every day please sync any new X bookmarks using the Field Theory CLI."
+
+Set up a cron job to run automatically:
+
+```bash
+# Sync every morning at 7am
+0 7 * * * ft sync
+
+# Sync and classify every morning
+0 7 * * * ft sync --classify
+```
+
+Or instruct the agent to run it on demand at the start of each session:
+
+> "At the start of each session, run `ft sync` to make sure my bookmarks are up to date before you search them."
+
+---
+
+## More example workflows
+
+### Summarize a topic
+
+```
+Use ft to search my bookmarks for "distributed systems" and give me a 
+reading list organized by subtopic.
+```
+
+The agent runs:
+```bash
+ft search "distributed systems" --limit 100
+```
+Then groups results by theme and formats them as a reading list.
+
+---
+
+### Find something you vaguely remember
+
+```
+I bookmarked a tweet from someone at Anthropic about sparse autoencoders 
+sometime in 2024. Can you find it?
+```
+
+The agent tries several queries:
+```bash
+ft search "sparse autoencoders" --after 2024-01-01
+ft search "SAE" --after 2024-01-01 --limit 50
+ft list --domain ai --after 2024-01-01 --json
+```
+
+---
+
+### Monitor a topic over time
+
+```
+Look at everything I've bookmarked about WebAssembly in the last year. 
+What are the recurring themes and what have I not explored yet?
+```
+
+```bash
+ft search "WebAssembly" --after 2024-01-01 --limit 100
+ft search "WASM" --after 2024-01-01 --limit 50
+ft list --domain systems --after 2024-01-01 --json
+```
+
+---
+
+### Explore your archive before a meeting
+
+```
+I have a meeting about AI infrastructure tomorrow. Search my bookmarks 
+for anything relevant and pull out the most important points.
+```
+
+```bash
+ft search "AI infrastructure"
+ft list --category research --domain ai --limit 50
+ft categories
+```
+
+---
+
+## Example agent conversation
+
+Here is what a real interaction looks like when you give an agent access to Field Theory:
+
+**You:**
+> Search my bookmarks for open source AI memory tools. Find the GitHub repos and tell me which one looks most active.
+
+**Agent:**
+```bash
+$ ft list --category tool --domain ai --json
+```
+*[receives JSON array of tool bookmarks in the AI domain]*
+
+```bash
+$ ft list --category tool --query "memory" --limit 30
+```
+*[receives ranked search results]*
+
+```bash
+$ ft show 1823456789012345678 --json
+```
+*[retrieves full detail including extracted GitHub links]*
+
+**Agent response:**
+> I found 12 bookmarks matching AI memory tools. Based on the GitHub links and content, here are the top candidates... [ranked list with rationale]
+
+---
+
+## Tips
+
+<Note>
+  The `--json` flag on `ft list` and `ft show` outputs structured data that agents can parse without having to interpret human-readable formatting.
+</Note>
+
+- Use `ft categories` at the start of a session to show the agent what categories exist before asking it to filter
+- Use `ft stats` to give the agent a quick overview of your archive (total count, date range, top authors)
+- Combine `--category`, `--domain`, `--after`, and `--before` filters on `ft list` to narrow results before the agent does deeper analysis
+- Run `ft sync --classify` regularly so classifications stay current and agent filters stay accurate

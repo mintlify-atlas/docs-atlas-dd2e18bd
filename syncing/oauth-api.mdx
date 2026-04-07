@@ -1,0 +1,155 @@
+---
+title: "OAuth API sync"
+description: "Cross-platform bookmark sync using X's official OAuth 2.0 API. Works on macOS, Linux, and Windows."
+---
+
+OAuth API sync uses X's official v2 API (`/2/users/:id/bookmarks`) with an OAuth 2.0 PKCE token. Unlike the default [Chrome session sync](/syncing/chrome-session), it requires you to register an X developer app and complete a one-time authorization flow — but it works on every platform.
+
+<Info>
+  **macOS users** can use the default `ft sync` (Chrome session sync) without any API setup. Switch to OAuth API sync if Chrome session sync is failing or if you prefer not to grant Keychain access.
+</Info>
+
+## When to use this
+
+<CardGroup cols={2}>
+  <Card title="Linux or Windows" icon="linux">
+    Chrome session sync is macOS-only. OAuth API sync is the only option on Linux and Windows.
+  </Card>
+  <Card title="Chrome session issues" icon="triangle-exclamation">
+    If Chrome session sync fails due to Keychain errors, profile problems, or corporate security policies.
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+You need an X developer app with OAuth 2.0 enabled. Create one at [developer.x.com](https://developer.x.com).
+
+Required settings for your app:
+
+- **App type:** Native App or Web App (both support PKCE)
+- **OAuth 2.0:** Enabled
+- **Callback URL:** `http://127.0.0.1:3000/callback` (or a custom URL you specify via `X_CALLBACK_URL`)
+- **Scopes:** `tweet.read`, `users.read`, `bookmark.read`, `offline.access`
+
+## Environment variables
+
+Set these in a `.env` or `.env.local` file in your current directory, or in `~/.ft-bookmarks/.env`:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `X_API_KEY` | Yes | OAuth 1.0a consumer key (also accepted as `X_CONSUMER_KEY`) |
+| `X_API_SECRET` | Yes | OAuth 1.0a consumer secret (also accepted as `X_SECRET_KEY`) |
+| `X_CLIENT_ID` | Yes | OAuth 2.0 client ID |
+| `X_CLIENT_SECRET` | Yes | OAuth 2.0 client secret |
+| `X_CALLBACK_URL` | No | Redirect URI; defaults to `http://127.0.0.1:3000/callback` |
+
+Example `.env` file:
+
+```bash
+X_API_KEY=your_api_key_here
+X_API_SECRET=your_api_secret_here
+X_CLIENT_ID=your_client_id_here
+X_CLIENT_SECRET=your_client_secret_here
+# Optional — only needed if you change the callback URL in your app settings
+# X_CALLBACK_URL=http://127.0.0.1:3000/callback
+```
+
+<Warning>
+  Never commit your `.env` file to version control. Add it to `.gitignore`.
+</Warning>
+
+## Setup
+
+<Steps>
+  <Step title="Add your credentials">
+    Create a `.env` file in your project directory (or `~/.ft-bookmarks/.env`) with the variables listed above.
+  </Step>
+  <Step title="Run ft auth">
+    Start the OAuth 2.0 PKCE authorization flow:
+
+    ```bash
+    ft auth
+    ```
+
+    This command:
+
+    1. Starts a local HTTP server on port 3000 (or the port from `X_CALLBACK_URL`).
+    2. Prints an authorization URL and opens it in your browser.
+    3. After you authorize in the browser, the local server captures the callback code.
+    4. Exchanges the code for an access token and saves it to `~/.ft-bookmarks/oauth-token.json`.
+
+    You should see output like:
+
+    ```
+    Saved token to /Users/you/.ft-bookmarks/oauth-token.json
+    Scope: tweet.read users.read bookmark.read offline.access
+    ```
+  </Step>
+  <Step title="Sync your bookmarks">
+    ```bash
+    ft sync --api
+    ```
+  </Step>
+</Steps>
+
+## Running a sync
+
+```bash
+# Standard incremental sync via OAuth API
+ft sync --api
+
+# Full history crawl via OAuth API
+ft sync --api --full
+
+# Stop after adding 100 new bookmarks
+ft sync --api --target-adds 100
+
+# Sync and classify new bookmarks in one step
+ft sync --api --classify
+```
+
+<Note>
+  The `--api` flag selects the OAuth v2 sync engine. All other sync flags (`--full`, `--target-adds`, `--classify`) work the same way as with Chrome session sync.
+</Note>
+
+## Token storage
+
+The access token is saved to `~/.ft-bookmarks/oauth-token.json` with `chmod 600` (owner-read-only). Treat this file like a password.
+
+```
+~/.ft-bookmarks/
+  oauth-token.json         # OAuth 2.0 token (chmod 600)
+```
+
+If the token is compromised, revoke it in your X developer app dashboard and re-run `ft auth`.
+
+## Platform support
+
+| Platform | Chrome session sync | OAuth API sync |
+|----------|--------------------:|---------------:|
+| macOS | Yes | Yes |
+| Linux | No | Yes |
+| Windows | No | Yes |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="'Missing X API credentials' error">
+    `ft auth` or `ft sync --api` requires `X_API_KEY`, `X_API_SECRET`, `X_CLIENT_ID`, and `X_CLIENT_SECRET` to be set. Check that your `.env` file exists and is in the right location:
+
+    - `./env` or `./.env.local` (current directory), or
+    - `~/.ft-bookmarks/.env` or `~/.ft-bookmarks/.env.local`
+  </Accordion>
+
+  <Accordion title="'Token exchange failed' error">
+    This usually means the client credentials are wrong, or the callback URL in your `.env` does not match the one registered in your X developer app. Verify both match exactly, including the port.
+  </Accordion>
+
+  <Accordion title="'Missing user-context OAuth token. Run: ft auth'">
+    The token file does not exist yet or was deleted. Run `ft auth` to complete the authorization flow and generate a new token.
+  </Accordion>
+
+  <Accordion title="Browser does not open automatically">
+    `ft auth` prints the authorization URL to the terminal. If the browser does not open automatically, copy the URL and paste it into your browser manually.
+  </Accordion>
+</AccordionGroup>

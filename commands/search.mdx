@@ -1,0 +1,78 @@
+---
+title: "ft search"
+description: "Full-text search across your bookmarks"
+---
+
+Search your bookmarks using BM25-ranked full-text search powered by SQLite FTS5. Results are sorted by relevance. Supports the full FTS5 query syntax including boolean operators and phrase matching.
+
+## Usage
+
+```bash
+ft search <query> [options]
+```
+
+## Arguments
+
+<ParamField path="query" type="string" required>
+  The search query. Supports FTS5 syntax:
+  - `AND` — both terms must appear (e.g., `rust AND async`)
+  - `OR` — either term (e.g., `pytorch OR jax`)
+  - `NOT` — exclude a term (e.g., `security NOT crypto`)
+  - `"exact phrase"` — match a phrase exactly (e.g., `"prompt injection"`)
+  - Bare terms are implicitly `AND`-ed
+</ParamField>
+
+## Options
+
+<ParamField query="--author" type="string">
+  Filter results to bookmarks by a specific author. Pass the handle without the `@` prefix (e.g., `--author karpathy`). Case-insensitive.
+</ParamField>
+
+<ParamField query="--after" type="string">
+  Only return bookmarks posted after this date. Format: `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField query="--before" type="string">
+  Only return bookmarks posted before this date. Format: `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField query="--limit" type="number" default="20">
+  Maximum number of results to return.
+</ParamField>
+
+## Examples
+
+```bash
+# Basic keyword search
+ft search "machine learning"
+
+# Boolean operators
+ft search "rust AND async"
+ft search "pytorch OR jax"
+
+# Exclude a term
+ft search "AI NOT crypto"
+
+# Exact phrase
+ft search '"prompt injection"'
+
+# Filter by author
+ft search "compilers" --author tef
+
+# Filter by date range
+ft search "LLM" --after 2024-01-01 --before 2024-12-31
+
+# Increase result count
+ft search "distributed systems" --limit 50
+
+# Combine filters
+ft search "security" --author taviso --after 2023-06-01
+```
+
+## Notes
+
+- Requires the search index to be built. If you see a message about a missing index, run `ft index` first.
+- Search is performed over bookmark text, author handle, and author name.
+- Results are ranked using BM25 — the most relevant matches appear first.
+- The search index is automatically updated after each `ft sync`.
+- To browse bookmarks without a query (e.g., filter by category), use `ft list` instead.

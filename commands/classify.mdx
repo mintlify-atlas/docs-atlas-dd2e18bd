@@ -1,0 +1,82 @@
+---
+title: "ft classify"
+description: "Classify bookmarks by category and subject domain"
+---
+
+Assign categories and subject domains to your bookmarks. Two commands are available: `ft classify` for category classification (with optional domain classification), and `ft classify-domains` for domain-only classification.
+
+## Usage
+
+```bash
+ft classify [options]
+ft classify-domains [options]
+```
+
+---
+
+## ft classify
+
+Classify bookmarks by content category using either an LLM or a built-in regex classifier. By default, uses an LLM (requires `claude` or `codex` CLI) and also runs domain classification afterward.
+
+### Options
+
+<ParamField query="--regex" type="boolean">
+  Use a simple regex-based classifier instead of an LLM. Faster and requires no external tools, but catches fewer cases. Classifications are based on keyword and URL pattern matching.
+</ParamField>
+
+### Examples
+
+```bash
+# Classify with LLM (default) — requires claude or codex CLI
+ft classify
+
+# Classify with regex — no LLM required
+ft classify --regex
+```
+
+### Categories
+
+| Category | What it catches |
+|----------|----------------|
+| `tool` | GitHub repos, CLI tools, npm packages, open-source projects |
+| `security` | CVEs, vulnerabilities, exploits, supply chain |
+| `technique` | Tutorials, demos, code patterns, "how I built X" |
+| `launch` | Product launches, announcements, "just shipped" |
+| `research` | ArXiv papers, studies, academic findings |
+| `opinion` | Takes, analysis, commentary, threads |
+| `commerce` | Products, shopping, physical goods |
+
+---
+
+## ft classify-domains
+
+Classify bookmarks by subject domain (e.g., `ai`, `finance`, `security`, `biotech`). Domains are separate from categories — they describe the topic area rather than the content type.
+
+By default, only classifies bookmarks that don't yet have a domain assigned.
+
+### Options
+
+<ParamField query="--all" type="boolean">
+  Re-classify all bookmarks, including those that already have a domain assigned. Use this to refresh domain classifications after a model or prompt update.
+</ParamField>
+
+### Examples
+
+```bash
+# Classify only bookmarks missing a domain (default)
+ft classify-domains
+
+# Re-classify everything
+ft classify-domains --all
+```
+
+---
+
+## Notes
+
+- `ft classify` (without `--regex`) requires the `claude` or `codex` CLI to be installed and authenticated.
+- LLM classification processes bookmarks in batches of 50. Large collections may take several minutes.
+- Classification runs incrementally — only unclassified bookmarks are processed unless `--all` is passed.
+- `ft sync --classify` runs both category and domain classification automatically after a sync.
+- After classifying, use `ft categories` and `ft domains` to see the distribution, or `ft list --category <name>` to browse by category.
+- The `--regex` mode is lossless with respect to existing LLM classifications — it only updates bookmarks that are still marked `unclassified`.
